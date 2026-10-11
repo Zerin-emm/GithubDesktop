@@ -58,7 +58,7 @@ export class ConfirmCheckoutCommitDialog extends React.Component<
           </Row>
           <Row>
             <Checkbox
-              label="Do not show this message again"
+              label="不再显示此消息"
               value={
                 this.state.confirmCheckoutCommit
                   ? CheckboxValue.Off

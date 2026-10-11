@@ -1,62 +1,43 @@
 import { IMenuItem } from '../../lib/menu-item'
-import { writeClipboardText } from '../main-process-proxy'
-import { Branch, BranchType } from '../../models/branch'
+import { clipboard } from 'electron'
 
 interface IBranchContextMenuConfig {
-  branch: Branch
+  name: string
+  isLocal: boolean
   onRenameBranch?: (branchName: string) => void
-  onViewBranchOnGitHub?: () => void
   onViewPullRequestOnGitHub?: () => void
   onDeleteBranch?: (branchName: string) => void
-  onCheckoutInNewWorktree?: (branch: Branch) => void
 }
 
 export function generateBranchContextMenuItems(
   config: IBranchContextMenuConfig
 ): IMenuItem[] {
   const {
-    branch,
+    name,
+    isLocal,
     onRenameBranch,
-    onViewBranchOnGitHub,
     onViewPullRequestOnGitHub,
     onDeleteBranch,
-    onCheckoutInNewWorktree,
   } = config
   const items = new Array<IMenuItem>()
 
   if (onRenameBranch !== undefined) {
     items.push({
-      label: 'Rename…',
-      action: () => onRenameBranch(branch.name),
-      enabled: branch.type === BranchType.Local,
+      label: "重命名…",
+      action: () => onRenameBranch(name),
+      enabled: isLocal,
     })
   }
 
   items.push({
-    label: __DARWIN__ ? 'Copy Branch Name' : 'Copy branch name',
-    action: () => writeClipboardText(branch.name),
+    label: __DARWIN__ ? "复制分支名" : "复制分支名",
+    action: () => clipboard.writeText(name),
   })
-
-  if (onViewBranchOnGitHub !== undefined) {
-    items.push({
-      label: 'View Branch on GitHub',
-      action: () => onViewBranchOnGitHub(),
-    })
-  }
 
   if (onViewPullRequestOnGitHub !== undefined) {
     items.push({
-      label: 'View Pull Request on GitHub',
+      label: "在 GitHub 上查看 Pull Request",
       action: () => onViewPullRequestOnGitHub(),
-    })
-  }
-
-  if (onCheckoutInNewWorktree !== undefined) {
-    items.push({
-      label: __DARWIN__
-        ? 'Checkout in New Worktree…'
-        : 'Checkout in new worktree…',
-      action: () => onCheckoutInNewWorktree(branch),
     })
   }
 
@@ -64,8 +45,8 @@ export function generateBranchContextMenuItems(
 
   if (onDeleteBranch !== undefined) {
     items.push({
-      label: 'Delete…',
-      action: () => onDeleteBranch(branch.name),
+      label: "删除…",
+      action: () => onDeleteBranch(name),
     })
   }
 

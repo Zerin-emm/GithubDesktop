@@ -36,7 +36,7 @@ export class SSHKeyPassphrase extends React.Component<
       <Dialog
         id="ssh-key-passphrase"
         type="normal"
-        title="SSH Key Passphrase"
+        title="SSH 密钥密码"
         backdropDismissable={false}
         onSubmit={this.onSubmit}
         onDismissed={this.onCancel}
@@ -51,7 +51,7 @@ export class SSHKeyPassphrase extends React.Component<
           </Row>
           <Row>
             <Checkbox
-              label="Remember passphrase"
+              label="记住密语"
               value={
                 this.state.rememberPassphrase
                   ? CheckboxValue.On

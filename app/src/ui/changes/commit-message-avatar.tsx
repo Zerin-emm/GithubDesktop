@@ -123,13 +123,6 @@ export class CommitMessageAvatar extends React.Component<
     ) {
       this.determineGitConfigLocation()
     }
-
-    if (
-      this.props.preferredAccountEmail !== prevProps.preferredAccountEmail &&
-      this.state.accountEmail === prevProps.preferredAccountEmail
-    ) {
-      this.setState({ accountEmail: this.props.preferredAccountEmail })
-    }
   }
 
   private async determineGitConfigLocation() {
@@ -241,7 +234,7 @@ export class CommitMessageAvatar extends React.Component<
     const locationDesc = isGitConfigLocal ? 'for your repository' : ''
     const settingsName = __DARWIN__ ? 'settings' : 'options'
     const settings = isGitConfigLocal
-      ? 'repository settings'
+      ? "仓库设置"
       : `git ${settingsName}`
     const buttonText = __DARWIN__ ? 'Open Git Settings' : 'Open git settings'
 
@@ -250,15 +243,14 @@ export class CommitMessageAvatar extends React.Component<
         <p>{user && user.name && `Email: ${user.email}`}</p>
 
         <p>
-          You can update your {location} git configuration {locationDesc} in
-          your {settings}.
+          你可以更新 {location} Git 配置 {locationDesc} (位于 {settings}.
         </p>
 
         {!isGitConfigLocal && (
           <p className="secondary-text">
-            You can also set an email local to this repository from the{' '}
+            你也可以在{' '}
             <LinkButton onClick={this.onRepositorySettingsClick}>
-              repository settings
+              仓库设置
             </LinkButton>
             .
           </p>
@@ -277,11 +269,11 @@ export class CommitMessageAvatar extends React.Component<
   private renderWarningPopover() {
     const { warningType, emailRuleFailures } = this.props
 
-    const updateEmailTitle = __DARWIN__ ? 'Update Email' : 'Update email'
+    const updateEmailTitle = __DARWIN__ ? 'Update Email' : "更新邮箱"
 
     const sharedHeader = (
       <>
-        The email in your global Git config (
+        全局 Git 配置中的邮箱(
         <span className="git-email">{this.props.email}</span>)
       </>
     )
@@ -293,7 +285,7 @@ export class CommitMessageAvatar extends React.Component<
         {hasEmails && (
           <Row>
             <Select
-              label="Your Account Emails"
+              label="你的账户邮箱"
               value={this.state.accountEmail}
               onChange={this.onSelectedGitHubEmailChange}
             >
@@ -307,17 +299,16 @@ export class CommitMessageAvatar extends React.Component<
         )}
         <Row>
           <div className="secondary-text">
-            You can{hasEmails ? ' also' : ''} choose an email local to this
-            repository from the{' '}
+            你可以{hasEmails ? ' also' : ''} 中选择本仓库专用的邮箱(位于{' '}
             <LinkButton onClick={this.onRepositorySettingsClick}>
-              repository settings
+              仓库设置
             </LinkButton>
             .
           </div>
         </Row>
         <Row className="button-row">
           <Button onClick={this.onIgnoreClick} type="button">
-            Ignore
+            忽略
           </Button>
           {hasEmails && (
             <Button onClick={this.onUpdateEmailClick} type="submit">
@@ -342,13 +333,13 @@ export class CommitMessageAvatar extends React.Component<
         <>
           <Row>
             <div>
-              {sharedHeader} doesn't match your GitHub{accountTypeSuffix}{' '}
-              account{userName}.{' '}
+              {sharedHeader} 与你的 GitHub{accountTypeSuffix}{' '}
+              账户{userName}.{' '}
               <LinkButton
-                ariaLabel="Learn more about commit attribution"
+                ariaLabel="了解提交归属的更多信息"
                 uri="https://docs.github.com/en/github/committing-changes-to-your-project/why-are-my-commits-linked-to-the-wrong-user"
               >
-                Learn more
+                了解更多
               </LinkButton>
             </div>
           </Row>
@@ -389,12 +380,12 @@ export class CommitMessageAvatar extends React.Component<
     if (name) {
       return (
         <>
-          Committing as <strong>{name}</strong>
+          提交者: <strong>{name}</strong>
         </>
       )
     }
 
-    return <>Committing with {email}</>
+    return <>提交邮箱: {email}</>
   }
 
   private renderPopover() {
@@ -403,11 +394,11 @@ export class CommitMessageAvatar extends React.Component<
     let header: string | JSX.Element | undefined = ''
     switch (this.props.warningType) {
       case 'misattribution':
-        header = 'This commit will be misattributed'
+        header = "此次提交有误"
         break
 
       case 'disallowedEmail':
-        header = 'This email address is disallowed'
+        header = '此电子邮件地址不被允许'
         break
 
       default:
@@ -424,7 +415,6 @@ export class CommitMessageAvatar extends React.Component<
         }
         anchorPosition={PopoverAnchorPosition.RightBottom}
         decoration={PopoverDecoration.Balloon}
-        onMousedownOutside={this.closePopover}
         onClickOutside={this.closePopover}
         ariaLabelledby="commit-avatar-popover-header"
       >

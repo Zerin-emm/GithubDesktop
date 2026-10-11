@@ -20,7 +20,7 @@ export class AddSSHHost extends React.Component<IAddSSHHostProps> {
       <Dialog
         id="add-ssh-host"
         type="normal"
-        title="SSH Host"
+        title="SSH 主机"
         backdropDismissable={false}
         onSubmit={this.onSubmit}
         onDismissed={this.onCancel}
@@ -35,8 +35,8 @@ export class AddSSHHost extends React.Component<IAddSSHHostProps> {
         </DialogContent>
         <DialogFooter>
           <OkCancelButtonGroup
-            okButtonText="Yes"
-            cancelButtonText="No"
+            okButtonText="确定"
+            cancelButtonText="取消"
             onCancelButtonClick={this.onCancel}
           />
         </DialogFooter>

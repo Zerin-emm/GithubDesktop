@@ -43,7 +43,6 @@ export type ExceptionKinds =
   | 'NoSuggestedActionsProvided'
   | 'NoSuggestedActionsProvided'
   | 'resizeObserverLoopCompleted'
-  | 'copilotConflictResolution'
 
 export function sendNonFatalException(kind: ExceptionKinds, error: Error) {
   if (getHasOptedOutOfStats()) {

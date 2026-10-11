@@ -126,11 +126,8 @@ export class ChangesListFilterOptions extends React.Component<
     this.closeFilterOptions()
   }
 
-  // Opens the filter options popover, or closes it if it's already open.
-  private toggleFilterOptionsOpen = () => {
-    this.setState(prevState => ({
-      isFilterOptionsOpen: !prevState.isFilterOptionsOpen,
-    }))
+  private openFilterOptions = () => {
+    this.setState({ isFilterOptionsOpen: true })
   }
 
   private renderFilterOptions() {
@@ -159,7 +156,7 @@ export class ChangesListFilterOptions extends React.Component<
         onClickOutside={this.closeFilterOptions}
       >
         <div className="filter-popover-header">
-          <h3 id="filter-options-header">Filter Options</h3>
+          <h3 id="filter-options-header">筛选选项</h3>
           <button
             className="close"
             onClick={this.closeFilterOptions}
@@ -176,7 +173,7 @@ export class ChangesListFilterOptions extends React.Component<
                 : CheckboxValue.Off
             }
             onChange={this.onFilterToIncludedInCommit}
-            label={`Included in commit (${includedFilesCount})`}
+            label={`包含在提交中(${includedFilesCount})`}
           />
           <Checkbox
             value={
@@ -185,7 +182,7 @@ export class ChangesListFilterOptions extends React.Component<
                 : CheckboxValue.Off
             }
             onChange={this.onFilterExcludedFiles}
-            label={`Excluded from commit (${excludedFilesCount})`}
+            label={`不包含在提交中(${excludedFilesCount})`}
           />
           <Checkbox
             value={
@@ -194,7 +191,7 @@ export class ChangesListFilterOptions extends React.Component<
                 : CheckboxValue.Off
             }
             onChange={this.onFilterNewFiles}
-            label={`New files (${newFilesCount})`}
+            label={`新增文件(${newFilesCount})`}
           />
           <Checkbox
             value={
@@ -203,7 +200,7 @@ export class ChangesListFilterOptions extends React.Component<
                 : CheckboxValue.Off
             }
             onChange={this.onFilterModifiedFiles}
-            label={`Modified files (${modifiedFilesCount})`}
+            label={`修改的文件(${modifiedFilesCount})`}
           />
           <Checkbox
             value={
@@ -212,12 +209,12 @@ export class ChangesListFilterOptions extends React.Component<
                 : CheckboxValue.Off
             }
             onChange={this.onFilterDeletedFiles}
-            label={`Deleted files (${deletedFilesCount})`}
+            label={`删除的文件(${deletedFilesCount})`}
           />
         </div>
         {filtersActive && (
           <div className="filter-options-footer">
-            <Button onClick={this.onClearAllFilters}>Clear filters</Button>
+            <Button onClick={this.onClearAllFilters}>清除筛选</Button>
           </div>
         )}
       </Popover>
@@ -243,7 +240,7 @@ export class ChangesListFilterOptions extends React.Component<
           className={classNames('filter-button', {
             active: hasActiveFilters,
           })}
-          onClick={this.toggleFilterOptionsOpen}
+          onClick={this.openFilterOptions}
           ariaExpanded={this.state.isFilterOptionsOpen}
           onButtonRef={this.onFilterOptionsButtonRef}
           tooltip={buttonTextLabel}

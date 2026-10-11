@@ -265,14 +265,6 @@ export class Dialog extends React.Component<DialogProps, IDialogState> {
   private dialogElement: HTMLDialogElement | null = null
   private dismissGraceTimeoutId?: number
 
-  /**
-   * The element within this dialog that last had keyboard focus while the
-   * dialog was the top-most one. Used to restore focus to the element that
-   * triggered a nested dialog once that nested dialog is dismissed (rather than
-   * moving focus back to the first suitable child).
-   */
-  private lastFocusedElement: HTMLElement | null = null
-
   private disableClickDismissalTimeoutId: number | null = null
   private disableClickDismissal = false
 
@@ -403,8 +395,6 @@ export class Dialog extends React.Component<DialogProps, IDialogState> {
       this.dialogElement.showModal()
     }
 
-    this.dialogElement.addEventListener('focusin', this.onDialogFocusIn)
-
     // Provide an event that components can subscribe to in order to perform
     // tasks such as re-layout after the dialog is visible
     this.dialogElement.dispatchEvent(
@@ -417,26 +407,7 @@ export class Dialog extends React.Component<DialogProps, IDialogState> {
     this.setState({ isAppearing: true })
     this.scheduleDismissGraceTimeout()
 
-    // If we're regaining top-most status after a nested dialog was dismissed,
-    // restore focus to the element that previously had it (typically the
-    // control that opened the nested dialog) rather than moving focus back to
-    // the first suitable child.
-    if (
-      this.lastFocusedElement !== null &&
-      this.dialogElement.contains(this.lastFocusedElement)
-    ) {
-      this.lastFocusedElement.focus()
-
-      // If focusing the last focused element didn't work (it may have been
-      // disabled or removed from the DOM) then we should move focus to the
-      // first suitable child.
-      if (document.activeElement !== this.lastFocusedElement) {
-        this.lastFocusedElement = null
-        this.focusFirstSuitableChild()
-      }
-    } else {
-      this.focusFirstSuitableChild()
-    }
+    this.focusFirstSuitableChild()
 
     window.addEventListener('focus', this.onWindowFocus)
 
@@ -445,8 +416,6 @@ export class Dialog extends React.Component<DialogProps, IDialogState> {
   }
 
   protected onDialogIsNotTopMost() {
-    this.dialogElement?.removeEventListener('focusin', this.onDialogFocusIn)
-
     if (this.dialogElement !== null && this.dialogElement.open) {
       this.dialogElement?.close()
     }
@@ -458,20 +427,6 @@ export class Dialog extends React.Component<DialogProps, IDialogState> {
 
     this.resizeObserver.disconnect()
     window.removeEventListener('resize', this.scheduleResizeEvent)
-  }
-
-  /**
-   * Keeps track of the element within this dialog that most recently had
-   * keyboard focus. See `lastFocusedElement` for how this is used.
-   */
-  private onDialogFocusIn = (e: FocusEvent) => {
-    if (
-      e.target instanceof HTMLElement &&
-      e.target !== this.dialogElement &&
-      this.dialogElement?.contains(e.target)
-    ) {
-      this.lastFocusedElement = e.target
-    }
   }
 
   /**
@@ -702,17 +657,16 @@ export class Dialog extends React.Component<DialogProps, IDialogState> {
       return
     }
 
-    if (!this.mouseEventIsInsideDialog(e)) {
-      // Ignore the first backdrop click right after the window's been focused.
-      // It could be the click that focused the window, in which case we don't
-      // want to dismiss the dialog. Only ignore backdrop clicks, not clicks on
-      // interactive elements like buttons.
-      if (this.disableClickDismissal) {
-        this.disableClickDismissal = false
-        this.clearClickDismissalTimer()
-        return
-      }
+    // Ignore the first click right after the window's been focused. It could
+    // be the click that focused the window, in which case we don't wanna
+    // dismiss the dialog.
+    if (this.disableClickDismissal) {
+      this.disableClickDismissal = false
+      this.clearClickDismissalTimer()
+      return
+    }
 
+    if (!this.mouseEventIsInsideDialog(e)) {
       // The user has pressed down on their pointer device outside of the
       // dialog (i.e. on the backdrop). Now we subscribe to the global
       // mouse up event where we can make sure that they release the pointer

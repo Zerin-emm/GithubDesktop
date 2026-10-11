@@ -194,7 +194,6 @@ export class ConfigureGitUser extends React.Component<
           showUnpushedIndicator={false}
           selectedCommits={[dummyCommit]}
           accounts={this.props.accounts}
-          preferAbsoluteDates={false}
         />
       </div>
     )
@@ -212,14 +211,14 @@ export class ConfigureGitUser extends React.Component<
     return (
       <div>
         <RadioButton
-          label={`Use my GitHub${accountTypeSuffix} account name and email address`}
+          label={`使用我的GitHub${accountTypeSuffix}账户名称和电子邮件地址`}
           checked={this.state.useGitHubAuthorInfo}
           onSelected={this.onUseGitHubInfoSelected}
           value="github-account"
           autoFocus={true}
         />
         <RadioButton
-          label="Configure manually"
+          label="手动配置"
           checked={!this.state.useGitHubAuthorInfo}
           onSelected={this.onUseGitConfigInfoSelected}
           value="git-config"
@@ -236,7 +235,7 @@ export class ConfigureGitUser extends React.Component<
     return (
       <>
         <Select
-          label="Email"
+          label="邮箱"
           value={this.state.gitHubEmail}
           onChange={this.onSelectedGitHubEmailChange}
         >
@@ -255,8 +254,8 @@ export class ConfigureGitUser extends React.Component<
       <>
         <TextBox
           type="email"
-          label="Email"
-          placeholder="your-email@example.com"
+          label="邮箱"
+          placeholder="您的邮箱"
           value={this.state.manualEmail}
           onValueChanged={this.onEmailChange}
         />
@@ -276,8 +275,8 @@ export class ConfigureGitUser extends React.Component<
       <Form className="sign-in-form" onSubmit={this.save}>
         <div className="sign-in-form-inputs">
           <TextBox
-            label="Name"
-            placeholder="Your Name"
+            label="名称"
+            placeholder="您的姓名"
             onValueChanged={this.onNameChange}
             value={
               this.state.useGitHubAuthorInfo
@@ -293,7 +292,7 @@ export class ConfigureGitUser extends React.Component<
             : this.renderGitConfigForm()}
         </div>
         <Row>
-          <Button type="submit">{this.props.saveLabel || 'Save'}</Button>
+          <Button type="submit">{this.props.saveLabel || '保存'}</Button>
           {this.props.children}
         </Row>
       </Form>

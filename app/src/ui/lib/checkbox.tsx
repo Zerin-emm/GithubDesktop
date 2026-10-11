@@ -1,5 +1,6 @@
 import * as React from 'react'
 import { createUniqueId, releaseUniqueId } from './id-pool'
+import uuid from 'uuid'
 import classNames from 'classnames'
 
 /** The possible values for a Checkbox component. */
@@ -59,14 +60,10 @@ export class Checkbox extends React.Component<ICheckboxProps, ICheckboxState> {
   }
 
   public componentWillMount() {
-    // TODO: I don't understand why we need this here, it was added in
-    // https://github.com/desktop/desktop/pull/17839 and I replaced uuid
-    // with crypto.randomUUID but like the whole point of createUniqueId
-    // is to create unique ids so this shouldn't be necessary.
     const friendlyName =
       this.props.label && typeof this.props.label === 'string'
         ? this.props.label
-        : crypto.randomUUID()
+        : uuid()
     const inputId = createUniqueId(`Checkbox_${friendlyName}`)
 
     this.setState({ inputId })

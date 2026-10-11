@@ -1,6 +1,4 @@
 import * as React from 'react'
-import { enableFormattingPreferences } from '../../lib/feature-flag'
-import { formatCompactNumber } from '../../lib/format-number'
 
 interface IFilesChangedBadgeProps {
   readonly filesChangedCount: number
@@ -15,14 +13,6 @@ export class FilesChangedBadge extends React.Component<
   {}
 > {
   public render() {
-    if (enableFormattingPreferences()) {
-      return (
-        <span className="counter">
-          {formatCompactNumber(this.props.filesChangedCount)}
-        </span>
-      )
-    }
-
     const filesChangedCount = this.props.filesChangedCount
     const badgeCount =
       filesChangedCount > MaximumChangesCount

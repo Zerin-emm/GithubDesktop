@@ -134,11 +134,10 @@ export async function reorder(
       repository,
       todoPath,
       lastRetainedCommitRef,
-      {
-        action: MultiCommitOperationKind.Reorder,
-        progressCallback,
-        commits,
-      }
+      MultiCommitOperationKind.Reorder,
+      undefined,
+      progressCallback,
+      commits
     )
   } catch (e) {
     log.error(e)

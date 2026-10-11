@@ -1,3 +1,4 @@
+import uuid from 'uuid'
 import { TestMenuEvent } from '../../../main-process/menu'
 import {
   isRepositoryWithGitHubRepository,
@@ -49,10 +50,6 @@ export function showTestUI(
       return showFakeConfirmCommittingConflictedFiles()
     case 'test-cherry-pick-conflicts-banner':
       return showFakeCherryPickConflictBanner()
-    case 'test-copilot-snapshot-card':
-      return dispatcher.showPopup({
-        type: PopupType.TestCopilotSnapshotCard,
-      })
     case 'test-discarded-changes-will-be-unrecoverable':
       return showFakeDiscardedChangesWillBeUnrecoverable()
     case 'test-do-you-want-fork-this-repository':
@@ -101,8 +98,6 @@ export function showTestUI(
       return showFakeReleaseNotesPopup()
     case 'test-reorder-banner':
       return showFakeReorderBanner()
-    case 'test-send-stats':
-      return dispatcher.sendStats()
     case 'test-showcase-update-banner':
       return showFakeUpdateBanner({ isShowcase: true })
     case 'test-thank-you-banner':
@@ -118,7 +113,7 @@ export function showTestUI(
       return dispatcher.postError(
         new ShellError(
           `Could not find executable for '${
-            __DARWIN__ ? 'Terminal' : 'Command Prompt'
+            __DARWIN__ ? 'Terminal' : "命令行"
           }' at path 'some/invalid/path'.  Please open ${
             __DARWIN__ ? 'Settings' : 'Options'
           } and select an available shell.`
@@ -167,8 +162,6 @@ export function showTestUI(
       return showFakeUpstreamAlreadyExists()
     case 'test-about-dialog':
       return dispatcher.showPopup({ type: PopupType.TestAbout })
-    case 'test-cli-action':
-      return dispatcher.showPopup({ type: PopupType.TestCLIAction })
     default:
       return assertNever(name, `Unknown menu event name: ${name}`)
   }
@@ -181,9 +174,7 @@ export function showTestUI(
 
   function testAppError() {
     return dispatcher.postError(
-      new Error(
-        'Test Error - to use default error handler' + crypto.randomUUID()
-      )
+      new Error('Test Error - to use default error handler' + uuid())
     )
   }
 

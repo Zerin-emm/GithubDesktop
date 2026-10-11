@@ -41,7 +41,6 @@ interface IPullRequestQuickViewProps {
 
 interface IPullRequestQuickViewState {
   readonly top: number
-  readonly visibility: 'visible' | 'hidden'
 }
 
 export class PullRequestQuickView extends React.Component<
@@ -62,7 +61,6 @@ export class PullRequestQuickView extends React.Component<
         props.pullRequestItemTop,
         this.quickViewHeight
       ),
-      visibility: 'hidden',
     }
   }
 
@@ -88,7 +86,6 @@ export class PullRequestQuickView extends React.Component<
 
   private onMarkdownParsed = () => {
     this.updateQuickViewPosition()
-    this.setState({ visibility: 'visible' })
   }
 
   private onViewOnGitHub = () => {
@@ -171,7 +168,7 @@ export class PullRequestQuickView extends React.Component<
           onClick={this.onViewOnGitHub}
           role="link"
         >
-          View on GitHub
+          在 GitHub 上查看
           <Octicon symbol={octicons.linkExternal} />
         </Button>
       </header>
@@ -220,20 +217,20 @@ export class PullRequestQuickView extends React.Component<
           onMarkdownLinkClicked={this.onMarkdownLinkClicked}
           onMarkdownParsed={this.onMarkdownParsed}
           underlineLinks={this.props.underlineLinks}
-          title="Pull request markdown body"
+          ariaLabel="Pull request markdown body"
         />
       </div>
     )
   }
 
   public render() {
-    const { top, visibility } = this.state
+    const { top } = this.state
     return (
       <div
         className="pull-request-quick-view"
         onMouseEnter={this.props.onMouseEnter}
         onMouseLeave={this.onMouseLeave}
-        style={{ top, visibility }}
+        style={{ top }}
         ref={this.quickViewRef}
       >
         <div className="pull-request-quick-view-contents">

@@ -136,7 +136,7 @@ export class TutorialPanel extends React.Component<
                   {` or `}
                   <LinkButton
                     uri="https://atom.io"
-                    title="Open the Atom website"
+                    title="打开 Atom 网站"
                   >
                     Atom
                   </LinkButton>
@@ -160,7 +160,7 @@ export class TutorialPanel extends React.Component<
             )}
           </TutorialStepInstructions>
           <TutorialStepInstructions
-            summaryText="Create a branch"
+            summaryText="新建分支"
             isComplete={this.isStepComplete}
             isNextStepTodo={this.isStepNextTodo}
             sectionId={TutorialStep.CreateBranch}
@@ -170,7 +170,7 @@ export class TutorialPanel extends React.Component<
             <p className="description">
               {`A branch allows you to work on different versions of a repository at one time. Create a
                 branch by going into the branch menu in the top bar and
-              clicking "${__DARWIN__ ? 'New Branch' : 'New branch'}".`}
+              clicking "${__DARWIN__ ? 'New Branch' : "新建分支"}".`}
             </p>
             <div className="action">
               <KeyboardShortcut
@@ -239,7 +239,7 @@ export class TutorialPanel extends React.Component<
             </div>
           </TutorialStepInstructions>
           <TutorialStepInstructions
-            summaryText="Open a pull request"
+            summaryText="开启拉取请求"
             isComplete={this.isStepComplete}
             isNextStepTodo={this.isStepNextTodo}
             sectionId={TutorialStep.OpenPullRequest}
@@ -264,7 +264,7 @@ export class TutorialPanel extends React.Component<
         </ol>
         <div className="footer">
           <Button onClick={this.props.onExitTutorial}>
-            {__DARWIN__ ? 'Exit Tutorial' : 'Exit tutorial'}
+            {__DARWIN__ ? 'Exit Tutorial' : "退出教程"}
           </Button>
         </div>
       </div>

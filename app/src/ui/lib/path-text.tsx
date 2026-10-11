@@ -524,18 +524,14 @@ export class PathText extends React.PureComponent<
       // Okay, so it didn't quite fit, let's trim it down a little
       const shortestNonFit = this.state.length
 
-      const maxChars = Math.max(shortestNonFit - 1, 0)
-      const minChars = Math.min(this.state.longestFit || 0, maxChars)
+      const maxChars = shortestNonFit - 1
+      const minChars = this.state.longestFit || 0
 
-      const ratioLength = clamp(
+      const length = clamp(
         Math.floor(this.state.length * ratio),
         minChars,
         maxChars
       )
-      const length =
-        this.state.shortestNonFit === undefined
-          ? ratioLength
-          : Math.floor((minChars + maxChars) / 2)
 
       this.setState({
         ...this.state,

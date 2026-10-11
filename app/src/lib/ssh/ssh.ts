@@ -1,5 +1,5 @@
 import memoizeOne from 'memoize-one'
-import { pathExists } from '../path-exists'
+import { pathExists } from '../../ui/lib/path-exists'
 import { getBoolean } from '../local-storage'
 import {
   getDesktopAskpassTrampolinePath,
@@ -32,7 +32,7 @@ export const isWindowsOpenSSHAvailable = memoizeOne(
 function isWindowsOpenSSHUseEnabled() {
   try {
     return getBoolean(UseWindowsOpenSSHKey, false)
-  } catch {
+  } catch (e) {
     return false
   }
 }

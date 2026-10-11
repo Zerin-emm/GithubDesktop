@@ -18,7 +18,7 @@ export async function installCLI(): Promise<void> {
 
   try {
     await symlinkCLI(false)
-  } catch {
+  } catch (e) {
     // If we error without running as an admin, try again as an admin.
     await symlinkCLI(true)
   }
@@ -85,7 +85,7 @@ function createNewSymlink(asAdmin: boolean) {
     fsAdmin.symlink(PackagedPath, InstalledCLIPath, error => {
       if (error !== null) {
         reject(
-          new Error(`Failed to symlink ${PackagedPath} to ${InstalledCLIPath}`)
+          new Error(`无法创建软链接：${PackagedPath} → ${InstalledCLIPath}`)
         )
         return
       }

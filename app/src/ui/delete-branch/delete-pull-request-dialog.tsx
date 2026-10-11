@@ -23,7 +23,7 @@ export class DeletePullRequest extends React.Component<IDeleteBranchProps, {}> {
     return (
       <Dialog
         id="delete-branch"
-        title={__DARWIN__ ? 'Delete Branch' : 'Delete branch'}
+        title={__DARWIN__ ? 'Delete Branch' : "删除分支"}
         type="warning"
         onDismissed={this.props.onDismissed}
         onSubmit={this.deleteBranch}
@@ -40,7 +40,7 @@ export class DeletePullRequest extends React.Component<IDeleteBranchProps, {}> {
           </p>
         </DialogContent>
         <DialogFooter>
-          <OkCancelButtonGroup destructive={true} okButtonText="Delete" />
+          <OkCancelButtonGroup destructive={true} okButtonText="删除" />
         </DialogFooter>
       </Dialog>
     )

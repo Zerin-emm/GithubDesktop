@@ -136,11 +136,11 @@ export class DiffOptions extends React.Component<
   private renderShowSideBySide() {
     return (
       <fieldset role="radiogroup">
-        <legend>Diff display</legend>
+        <legend>差异显示</legend>
         <RadioButton
           value="Unified"
           checked={!this.props.showSideBySideDiff}
-          label="Unified"
+          label="标准"
           onSelected={this.onUnifiedSelected}
         />
         <RadioButton
@@ -148,7 +148,7 @@ export class DiffOptions extends React.Component<
           checked={this.props.showSideBySideDiff}
           label={
             <>
-              <div>Split</div>
+              <div>分割</div>
             </>
           }
           onSelected={this.onSideBySideSelected}
@@ -160,7 +160,7 @@ export class DiffOptions extends React.Component<
   private renderHideWhitespaceChanges() {
     return (
       <fieldset>
-        <legend>Whitespace</legend>
+        <legend>空格</legend>
         <Checkbox
           value={
             this.props.hideWhitespaceChanges
@@ -169,13 +169,12 @@ export class DiffOptions extends React.Component<
           }
           onChange={this.onHideWhitespaceChangesChanged}
           label={
-            __DARWIN__ ? 'Hide Whitespace Changes' : 'Hide whitespace changes'
+            __DARWIN__ ? 'Hide Whitespace Changes' : "隐藏空格更改"
           }
         />
         {this.props.isInteractiveDiff && (
           <p className="secondary-text">
-            Interacting with individual lines or hunks will be disabled while
-            hiding whitespace.
+            隐藏空格时将禁用与单行或块的交互。
           </p>
         )}
       </fieldset>

@@ -6,7 +6,7 @@ import { Button } from './button'
 
 /** Text to let the user know their browser will send them back to GH Desktop */
 export const BrowserRedirectMessage =
-  "Your browser will redirect you back to GitHub Desktop once you've signed in. If your browser asks for your permission to launch GitHub Desktop please allow it to."
+  "登录后，浏览器将会重定向到GitHub Desktop。如果您的浏览器请求您允许启动GitHub Desktop，请点击允许。"
 
 interface IAuthenticationFormProps {
   /**
@@ -47,7 +47,7 @@ export class AuthenticationForm extends React.Component<IAuthenticationFormProps
           autoFocus={true}
           role="link"
         >
-          Sign in using your browser
+          使用浏览器登录
           <Octicon symbol={octicons.linkExternal} />
         </Button>
         {this.props.additionalButtons}

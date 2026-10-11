@@ -6,7 +6,11 @@ import {
   DiscardChangesError,
   ErrorWithMetadata,
 } from '../../lib/error-with-metadata'
-import { GitError, isAuthFailureError } from '../../lib/git/core'
+import {
+  coerceToString,
+  GitError,
+  isAuthFailureError,
+} from '../../lib/git/core'
 import { ShellError } from '../../lib/shells'
 import { UpstreamAlreadyExistsError } from '../../lib/stores/upstream-already-exists-error'
 
@@ -18,12 +22,11 @@ import {
 import { hasWritePermission } from '../../models/github-repository'
 import { RetryActionType } from '../../models/retry-actions'
 import { parseFilesToBeOverwritten } from '../lib/parse-files-to-be-overwritten'
-import { pathExists } from '../../lib/path-exists'
+import { pathExists } from '../lib/path-exists'
 import {
   ISecretLocation,
   ISecretScanResult,
 } from '../secret-scanning/push-protection-error-dialog'
-import { coerceToString } from '../../lib/git/coerce-to-string'
 
 /** An error which also has a code property. */
 interface IErrorWithCode extends Error {
@@ -426,7 +429,7 @@ export async function refusedWorkflowUpdate(
 }
 
 const samlReauthErrorMessageRe =
-  /'([^']+)' organization has enabled or enforced SAML SSO.*?you must re-authorize/s
+  /`([^']+)' organization has enabled or enforced SAML SSO.*?you must re-authorize/s
 
 /**
  * Attempts to detect whether an error is the result of a failed push

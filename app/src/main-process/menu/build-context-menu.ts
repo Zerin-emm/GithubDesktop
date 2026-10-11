@@ -83,7 +83,6 @@ function buildRecursiveContextMenu(
         new MenuItem({
           label: item.label,
           type: item.type,
-          checked: item.checked,
           enabled: item.enabled,
           role: item.role,
           click: () => actionFn(indices),

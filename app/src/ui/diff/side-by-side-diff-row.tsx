@@ -453,10 +453,10 @@ export class SideBySideDiffRow extends React.Component<
 
           {syntaxHighlightLine(data.content, data.tokens)}
           {data.noNewLineIndicator && (
-            <span className="no-newline-indicator">
-              <Octicon symbol={narrowNoNewlineSymbol} />
-              <span> No newline at end of file</span>
-            </span>
+            <Octicon
+              symbol={narrowNoNewlineSymbol}
+              title="文件末尾没有换行符"
+            />
           )}
         </div>
       </div>
@@ -472,7 +472,7 @@ export class SideBySideDiffRow extends React.Component<
       case DiffHunkExpansionType.Up:
         return {
           icon: octicons.foldUp,
-          title: 'Expand Up',
+          title: "展开上方",
           handler: this.onExpandHunk(hunkIndex, expansionType),
         }
       // This can only be the last dummy hunk. In this case, we expand the
@@ -480,13 +480,13 @@ export class SideBySideDiffRow extends React.Component<
       case DiffHunkExpansionType.Down:
         return {
           icon: octicons.foldDown,
-          title: 'Expand Down',
+          title: "展开下方",
           handler: this.onExpandHunk(hunkIndex - 1, expansionType),
         }
       case DiffHunkExpansionType.Short:
         return {
           icon: octicons.fold,
-          title: 'Expand All',
+          title: "全部展开",
           handler: this.onExpandHunk(hunkIndex, expansionType),
         }
     }
@@ -940,7 +940,7 @@ export class SideBySideDiffRow extends React.Component<
   }
 
   private onMouseDownLineNumber = (evt: React.MouseEvent) => {
-    if (evt.button !== 0) {
+    if (evt.buttons === 2) {
       return
     }
 
@@ -1019,10 +1019,6 @@ export class SideBySideDiffRow extends React.Component<
 
   private onContextMenuLineNumber = (evt: React.MouseEvent) => {
     if (this.props.hideWhitespaceInDiff) {
-      const column = this.getDiffColumn(evt.currentTarget)
-      if (column !== null) {
-        this.setState({ showWhitespaceHint: column })
-      }
       return
     }
 
@@ -1034,13 +1030,6 @@ export class SideBySideDiffRow extends React.Component<
 
   private onContextMenuHunk = () => {
     if (this.props.hideWhitespaceInDiff) {
-      const { row } = this.props
-      // Prefer left hand side popovers when clicking hunk except for when
-      // the left hand side doesn't have a gutter
-      const column =
-        row.type === DiffRowType.Added ? DiffColumn.After : DiffColumn.Before
-
-      this.setState({ showWhitespaceHint: column })
       return
     }
 

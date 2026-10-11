@@ -96,28 +96,6 @@ interface IAutocompletingTextInputProps<ElementType, AutocompleteItemType> {
 
   /** Called when the input field receives focus. */
   readonly onFocus?: (event: React.FocusEvent<ElementType>) => void
-
-  /** Called when the input field loses focus. */
-  readonly onBlur?: (value: string) => void
-
-  /** The aria-labelledby attribute for the input element. */
-  readonly ariaLabelledBy?: string
-
-  /** The aria-describedby attribute for the input element. */
-  readonly ariaDescribedBy?: string
-
-  /**
-   * An optional suffix to be appended to the autocompletion text when an item is completed,
-   * defaults to ' '
-   */
-  readonly completionSuffix?: string
-
-  /** Whether the autocompletion popup should be anchored to the caret position
-   * instead of the input/textarea element. Optional (defaults to true) */
-  readonly anchorToCaret?: boolean
-
-  /** Offset to apply to the distance from the anchor */
-  readonly anchorOffset?: number
 }
 
 interface IAutocompletionState<T> {
@@ -134,6 +112,12 @@ interface IAutocompletionState<T> {
  * The height of the autocompletion result rows.
  */
 const RowHeight = 29
+
+/**
+ * The amount to offset on the Y axis so that the popup is displayed below the
+ * current line.
+ */
+const YOffset = 20
 
 /**
  * The default height for the popup. Note that the actual height may be
@@ -251,10 +235,10 @@ export abstract class AutocompletingTextInput<
     }
 
     const item = state.items[row]
-    const selected = item === state.selectedItem
+    const selected = item === state.selectedItem ? 'selected' : ''
     return (
-      <div className={`autocompletion-item ${selected ? 'selected' : ''}`}>
-        {state.provider.renderItem(item, selected)}
+      <div className={`autocompletion-item ${selected}`}>
+        {state.provider.renderItem(item)}
       </div>
     )
   }
@@ -294,13 +278,8 @@ export abstract class AutocompletingTextInput<
 
     return (
       <Popover
-        anchor={
-          this.props.anchorToCaret === false
-            ? this.element
-            : this.invisibleCaretRef.current
-        }
+        anchor={this.invisibleCaretRef.current}
         anchorPosition={PopoverAnchorPosition.BottomLeft}
-        anchorOffset={this.props.anchorOffset}
         decoration={PopoverDecoration.None}
         maxHeight={Math.min(DefaultPopupHeight, noOverflowItemHeight)}
         minHeight={minHeight}
@@ -460,8 +439,6 @@ export abstract class AutocompletingTextInput<
       'aria-controls': this.state.autocompleteContainerId,
       'aria-owns': this.state.autocompleteContainerId,
       'aria-activedescendant': this.getActiveAutocompleteItemId(),
-      'aria-labelledby': this.props.ariaLabelledBy,
-      'aria-describedby': this.props.ariaDescribedBy,
     }
 
     return React.createElement<React.HTMLAttributes<ElementType>, ElementType>(
@@ -505,15 +482,12 @@ export abstract class AutocompletingTextInput<
       return null
     }
 
-    if (this.props.anchorToCaret === false) {
-      return null
-    }
-
     return (
       <div
         style={{
           backgroundColor: 'transparent',
           width: 2,
+          height: YOffset,
           position: 'absolute',
           left: caretCoordinates.left,
           top: caretCoordinates.top,
@@ -527,10 +501,6 @@ export abstract class AutocompletingTextInput<
 
   private onBlur = (e: React.FocusEvent<ElementType>) => {
     this.close()
-
-    if (this.props.onBlur !== undefined && this.element !== null) {
-      this.props.onBlur(this.element.value)
-    }
   }
 
   private onFocus = (e: React.FocusEvent<ElementType>) => {
@@ -618,9 +588,7 @@ export abstract class AutocompletingTextInput<
       autocompletionState.provider.getCompletionText(item)
 
     const textWithAutoCompleteText =
-      originalText.substr(0, range.start - 1) +
-      autoCompleteText +
-      (this.props.completionSuffix ?? ' ')
+      originalText.substr(0, range.start - 1) + autoCompleteText + ' '
 
     const newText =
       textWithAutoCompleteText +
@@ -723,7 +691,6 @@ export abstract class AutocompletingTextInput<
         this.insertCompletion(item, 'keyboard')
       }
     } else if (event.key === 'Escape') {
-      event.preventDefault()
       this.close()
     }
   }

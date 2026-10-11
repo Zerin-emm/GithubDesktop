@@ -8,6 +8,7 @@ import { Button } from '../lib/button'
 import { IAPIRepository } from '../../lib/api'
 import { CloneableRepositoryFilterList } from './cloneable-repository-filter-list'
 import { ClickSource } from '../lib/list'
+import { enableMultipleEnterpriseAccounts } from '../../lib/feature-flag'
 import { AccountPicker } from '../account-picker'
 
 interface ICloneGithubRepositoryProps {
@@ -100,9 +101,10 @@ export class CloneGithubRepository extends React.PureComponent<ICloneGithubRepos
   public render() {
     return (
       <DialogContent className="clone-github-repository-content">
-        {this.props.accounts.length > 1 && (
+        {enableMultipleEnterpriseAccounts() &&
+        this.props.accounts.length > 1 ? (
           <Row className="account-picker-row">{this.renderAccountPicker()}</Row>
-        )}
+        ) : undefined}
         <Row>
           <CloneableRepositoryFilterList
             account={this.props.account}
@@ -120,11 +122,11 @@ export class CloneGithubRepository extends React.PureComponent<ICloneGithubRepos
         <Row className="local-path-field">
           <TextBox
             value={this.props.path}
-            label={__DARWIN__ ? 'Local Path' : 'Local path'}
-            placeholder="repository path"
+            label={__DARWIN__ ? 'Local Path' : "本地路径"}
+            placeholder="存储库路径"
             onValueChanged={this.props.onPathChanged}
           />
-          <Button onClick={this.props.onChooseDirectory}>Choose…</Button>
+          <Button onClick={this.props.onChooseDirectory}>选择…</Button>
         </Row>
       </DialogContent>
     )

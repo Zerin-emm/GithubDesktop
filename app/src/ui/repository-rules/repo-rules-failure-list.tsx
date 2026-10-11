@@ -40,7 +40,7 @@ export class RepoRulesMetadataFailureList extends React.Component<IRepoRulesMeta
     return (
       <div className="repo-rules-failure-list-component">
         <p>
-          {leadingText} fails {totalFails} rule{totalFails > 1 ? 's' : ''}
+          {leadingText} 未能通过 {totalFails} rule{totalFails > 1 ? 's' : ''}
           {endText}{' '}
           <RepoRulesetsForBranchLink repository={repository} branch={branch}>
             View all rulesets for this branch.

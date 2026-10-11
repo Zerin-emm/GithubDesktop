@@ -47,14 +47,8 @@ declare const __RELEASE_CHANNEL__:
   | 'test'
   | 'development'
 
-/** The URL for Squirrel's updates. */
+/** The URL for the update feed. */
 declare const __UPDATES_URL__: string
-
-/** The URL for fatal exception reports. */
-declare const __ERROR_REPORTING_ENDPOINT__: string | undefined
-
-/** The URL for non-fatal exception reports. */
-declare const __NON_FATAL_ERROR_REPORTING_ENDPOINT__: string | undefined
 
 /**
  * The currently executing process kind, this is specific to desktop
@@ -146,7 +140,7 @@ declare namespace NodeJS {
       error: Error,
       context?: { [key: string]: string }
     ): this
-    removeListener(event: 'exit', listener: (code: number) => void): this
+    removeListener(event: 'exit', listener: Function): this
   }
 }
 

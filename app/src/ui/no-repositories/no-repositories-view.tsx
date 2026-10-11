@@ -94,10 +94,10 @@ export class NoRepositoriesView extends React.Component<
   public render() {
     return (
       <UiView id="no-repositories">
-        <section aria-label="Let's get started!">
+        <section aria-label="开始吧!">
           <header>
-            <h1>Let's get started!</h1>
-            <p>Add a repository to GitHub Desktop to start collaborating</p>
+            <h1>开始吧!</h1>
+            <p>向 GitHub Desktop 添加仓库,开始协作</p>
           </header>
 
           <div className="content">
@@ -247,7 +247,7 @@ export class NoRepositoriesView extends React.Component<
         className="clone-selected-repository"
         onClick={this.onCloneSelectedRepository}
       >
-        Clone{' '}
+        克隆{' '}
         <strong>
           {selectedItem.owner.login}/{selectedItem.name}
         </strong>
@@ -305,7 +305,7 @@ export class NoRepositoriesView extends React.Component<
         octicons.mortarBoard,
         __DARWIN__
           ? 'Return to In Progress Tutorial'
-          : 'Return to in progress tutorial',
+          : '返回进行中的教程',
         this.props.onResumeTutorialRepository,
         'submit'
       )
@@ -314,7 +314,7 @@ export class NoRepositoriesView extends React.Component<
         octicons.mortarBoard,
         __DARWIN__
           ? 'Create a Tutorial Repository…'
-          : 'Create a tutorial repository…',
+          : "创建存储库教程...",
         this.props.onCreateTutorialRepository,
         'submit'
       )
@@ -326,7 +326,7 @@ export class NoRepositoriesView extends React.Component<
       octicons.repoClone,
       __DARWIN__
         ? 'Clone a Repository from the Internet…'
-        : 'Clone a repository from the Internet…',
+        : "克隆存储库...",
       this.onShowClone,
       undefined,
       !this.isUserSignedIn()
@@ -338,7 +338,7 @@ export class NoRepositoriesView extends React.Component<
       octicons.plus,
       __DARWIN__
         ? 'Create a New Repository on your Local Drive…'
-        : 'Create a New Repository on your local drive…',
+        : '在本地驱动器上创建一个新的仓库…',
       this.props.onCreate
     )
   }
@@ -348,7 +348,7 @@ export class NoRepositoriesView extends React.Component<
       octicons.fileDirectory,
       __DARWIN__
         ? 'Add an Existing Repository from your Local Drive…'
-        : 'Add an Existing Repository from your local drive…',
+        : '从本地驱动器添加现有仓库…',
       this.props.onAdd
     )
   }
@@ -366,8 +366,7 @@ export class NoRepositoriesView extends React.Component<
         <div className="drag-drop-info">
           <Octicon symbol={octicons.lightBulb} />
           <div>
-            <strong>ProTip!</strong> You can drag &amp; drop an existing
-            repository folder here to add it to Desktop
+            <strong>小技巧!</strong> 你可以将现有仓库文件夹拖放到此处,将其添加到 Desktop
           </div>
         </div>
       </div>

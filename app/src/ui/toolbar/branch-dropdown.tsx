@@ -2,10 +2,7 @@ import * as React from 'react'
 import { Dispatcher } from '../dispatcher'
 import * as octicons from '../octicons/octicons.generated'
 import { OcticonSymbol, syncClockwise } from '../octicons'
-import {
-  isRepositoryWithGitHubRepository,
-  Repository,
-} from '../../models/repository'
+import { Repository } from '../../models/repository'
 import { Resizable } from '../resizable'
 import { TipState } from '../../models/tip'
 import { ToolbarDropdown, DropdownState } from './dropdown'
@@ -113,8 +110,6 @@ export class BranchDropdown extends React.Component<IBranchDropdownProps> {
         emoji={this.props.emoji}
         onDeleteBranch={this.onDeleteBranch}
         onRenameBranch={this.onRenameBranch}
-        onCheckoutInNewWorktree={this.onCheckoutInNewWorktree}
-        onCheckoutPRInNewWorktree={this.onCheckoutPRInNewWorktree}
         underlineLinks={this.props.underlineLinks}
       />
     )
@@ -140,7 +135,7 @@ export class BranchDropdown extends React.Component<IBranchDropdownProps> {
     let icon: OcticonSymbol = octicons.gitBranch
     let iconClassName: string | undefined = undefined
     let title: string
-    let description = __DARWIN__ ? 'Current Branch' : 'Current branch'
+    let description = __DARWIN__ ? 'Current Branch' : "当前分支"
     let canOpen = true
     let disabled = false
     let tooltip: string
@@ -187,7 +182,7 @@ export class BranchDropdown extends React.Component<IBranchDropdownProps> {
       canOpen = false
     } else if (conflictState !== null && isRebaseConflictState(conflictState)) {
       title = conflictState.targetBranch
-      description = 'Rebasing branch'
+      description = "变基分支"
       icon = octicons.gitBranch
       canOpen = false
       disabled = true
@@ -247,7 +242,7 @@ export class BranchDropdown extends React.Component<IBranchDropdownProps> {
           onResize={this.onResize}
           maximumWidth={this.props.branchDropdownWidth.max}
           minimumWidth={this.props.branchDropdownWidth.min}
-          description="Current branch dropdown button"
+          description="当前分支下拉按钮"
         >
           <ToolbarDropdown
             className="branch-button"
@@ -310,16 +305,10 @@ export class BranchDropdown extends React.Component<IBranchDropdownProps> {
       return
     }
 
-    const { branch } = tip
-
     const items = generateBranchContextMenuItems({
-      branch,
+      name: tip.branch.name,
+      isLocal: tip.branch.type === BranchType.Local,
       onRenameBranch: this.onRenameBranch,
-      onViewBranchOnGitHub:
-        isRepositoryWithGitHubRepository(this.props.repository) &&
-        tip.branch.upstreamRemoteName
-          ? this.onViewBranchOnGitHub
-          : undefined,
       onViewPullRequestOnGitHub: this.props.currentPullRequest
         ? this.onViewPullRequestOnGithub
         : undefined,
@@ -347,29 +336,6 @@ export class BranchDropdown extends React.Component<IBranchDropdownProps> {
       repository: this.props.repository,
       branch,
     })
-  }
-
-  private onViewBranchOnGitHub = () => {
-    const tip = this.props.repositoryState.branchesState.tip
-    const gitHubRepository = this.props.repository.gitHubRepository
-
-    if (tip.kind !== TipState.Valid) {
-      return
-    }
-
-    if (!gitHubRepository || gitHubRepository.htmlURL === null) {
-      return
-    }
-
-    if (!tip.branch.upstreamWithoutRemote) {
-      return
-    }
-
-    const url = `${gitHubRepository.htmlURL}/tree/${encodeURIComponent(
-      tip.branch.upstreamWithoutRemote
-    )}`
-
-    this.props.dispatcher.openInBrowser(url)
   }
 
   private onViewPullRequestOnGithub = () => {
@@ -408,26 +374,6 @@ export class BranchDropdown extends React.Component<IBranchDropdownProps> {
       repository,
       branch,
       existsOnRemote: aheadBehind !== null,
-    })
-  }
-
-  private onCheckoutInNewWorktree = (branch: Branch) => {
-    this.props.dispatcher.closeFoldout(FoldoutType.Branch)
-    this.props.dispatcher.showPopup({
-      type: PopupType.AddWorktree,
-      repository: this.props.repository,
-      initialBranchName: branch.name,
-      initialWorktreeName: `${this.props.repository.name}-${branch.nameWithoutRemote}`,
-    })
-  }
-
-  private onCheckoutPRInNewWorktree = (pullRequest: PullRequest) => {
-    this.props.dispatcher.closeFoldout(FoldoutType.Branch)
-    this.props.dispatcher.showPopup({
-      type: PopupType.AddWorktree,
-      repository: this.props.repository,
-      initialBranchName: pullRequest.head.ref,
-      initialWorktreeName: `${this.props.repository.name}-${pullRequest.pullRequestNumber}`,
     })
   }
 

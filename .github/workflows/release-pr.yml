@@ -5,11 +5,11 @@ on: create
 jobs:
   build:
     name: Create Release Pull Request
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-latest
     permissions:
       pull-requests: write
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v4
         if: |
           startsWith(github.ref, 'refs/heads/releases/') && !contains(github.ref, 'test')
 
@@ -28,23 +28,22 @@ jobs:
           echo "$PR_TITLE" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
 
-      - uses: actions/create-github-app-token@v3
+      - uses: tibdex/github-app-token@v2
         id: generate-token
         if: |
           startsWith(github.ref, 'refs/heads/releases/') && !contains(github.ref, 'test')
         with:
-          client-id: ${{ secrets.DESKTOP_RELEASES_APP_ID }}
-          private-key: ${{ secrets.DESKTOP_RELEASES_APP_PRIVATE_KEY }}
+          app_id: ${{ secrets.DESKTOP_RELEASES_APP_ID }}
+          private_key: ${{ secrets.DESKTOP_RELEASES_APP_PRIVATE_KEY }}
 
       - name: Create Release Pull Request
+        uses: peter-evans/create-pull-request@v6.0.5
         if: |
           startsWith(github.ref, 'refs/heads/releases/') && !contains(github.ref, 'test')
-        env:
-          GH_TOKEN: ${{ steps.generate-token.outputs.token }}
-        run: |
-          gh pr create \
-            --head "${{ github.ref_name }}" \
-            --base development \
-            --title "$PR_TITLE" \
-            --body "$PR_BODY" \
-            --draft
+        with:
+          token: ${{ steps.generate-token.outputs.token }}
+          title: ${{ env.PR_TITLE }}
+          body: ${{ env.PR_BODY }}
+          branch: ${{ github.ref }}
+          base: development
+          draft: true

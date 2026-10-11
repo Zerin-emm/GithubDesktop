@@ -169,7 +169,7 @@ export function getStringArray(key: string): ReadonlyArray<string> {
     }
 
     return outputArray
-  } catch {
+  } catch (e) {
     return []
   }
 }
@@ -221,7 +221,7 @@ export function getObject<T>(key: string): T | undefined {
 
   try {
     return JSON.parse(rawData)
-  } catch {
+  } catch (e) {
     // If corrupted and can't be parsed, we return undefined.
     return
   }
@@ -237,4 +237,25 @@ export function getObject<T>(key: string): T | undefined {
 export function setObject(key: string, value: object) {
   const rawData = JSON.stringify(value)
   localStorage.setItem(key, rawData)
+}
+
+/**
+ * Retrieve a raw string value from a given local storage entry,
+ * or null if the key doesn't exist.
+ *
+ * @param key local storage entry to read
+ */
+export function getString(key: string): string | null {
+  return localStorage.getItem(key)
+}
+
+/**
+ * Set the provided key in local storage to a raw string value, or update the
+ * existing value if a key is already defined.
+ *
+ * @param key local storage entry to update
+ * @param value the string to set
+ */
+export function setString(key: string, value: string) {
+  localStorage.setItem(key, value)
 }

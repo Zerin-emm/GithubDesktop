@@ -101,7 +101,7 @@ export class ReleaseNotes extends React.Component<IReleaseNotesProps, {}> {
 
     return {
       latestVersion: `${oldestRelease.latestVersion} - ${latestRelease.latestVersion}`,
-      datePublished: `${oldestRelease.datePublished} to ${latestRelease.datePublished}`,
+      datePublished: `${oldestRelease.datePublished} 到 ${latestRelease.datePublished}`,
       enhancements: newReleases.flatMap(r => r.enhancements),
       bugfixes: newReleases.flatMap(r => r.bugfixes),
       pretext: newReleases.flatMap(r => r.pretext),
@@ -121,7 +121,7 @@ export class ReleaseNotes extends React.Component<IReleaseNotesProps, {}> {
         emoji={this.props.emoji}
         onMarkdownLinkClicked={this.onMarkdownLinkClicked}
         underlineLinks={this.props.underlineLinks}
-        title="Release notes generated from markdown"
+        ariaLabel="Release notes generated from markdown"
       />
     )
   }
@@ -136,7 +136,7 @@ export class ReleaseNotes extends React.Component<IReleaseNotesProps, {}> {
     if (latestVersion === __APP_VERSION__) {
       return (
         <Button type="submit" onClick={this.onDismissed}>
-          Close
+          关闭
         </Button>
       )
     }
@@ -145,9 +145,9 @@ export class ReleaseNotes extends React.Component<IReleaseNotesProps, {}> {
       <OkCancelButtonGroup
         destructive={true}
         okButtonText={
-          __DARWIN__ ? 'Install and Restart' : 'Install and restart'
+          __DARWIN__ ? 'Install and Restart' : "安装并重启"
         }
-        cancelButtonText="Close"
+        cancelButtonText="关闭"
       />
     )
   }

@@ -3,7 +3,6 @@
 #release-notes {
   max-height: 500px;
   max-width: 800px;
-  min-width: 550px;
 
   .dialog-content {
     // we'll own the layout inside here
@@ -39,7 +38,6 @@
   .dialog-footer {
     flex-direction: row;
     justify-content: space-between;
-    gap: var(--spacing);
   }
 
   ul {

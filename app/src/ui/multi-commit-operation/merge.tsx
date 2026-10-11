@@ -21,16 +21,9 @@ export abstract class Merge extends BaseMultiCommitOperation {
       state: { operationDetail },
     } = this.props
 
-    // Conflicts were resolved externally — nothing left to continue.
-    if (conflictState === null) {
-      this.onFlowEnded()
-      return
-    }
-
     if (
-      (state.step.kind !== MultiCommitOperationStepKind.ShowConflicts &&
-        state.step.kind !==
-          MultiCommitOperationStepKind.ShowCopilotConflicts) ||
+      state.step.kind !== MultiCommitOperationStepKind.ShowConflicts ||
+      conflictState === null ||
       !isMergeConflictState(conflictState) ||
       operationDetail.kind !== MultiCommitOperationKind.Merge
     ) {
@@ -79,7 +72,7 @@ export abstract class Merge extends BaseMultiCommitOperation {
   protected onConflictsDialogDismissed = () => {
     const { dispatcher, workingDirectory, conflictState } = this.props
     if (conflictState === null || !isMergeConflictState(conflictState)) {
-      this.onFlowEnded()
+      this.endFlowInvalidState(true)
       return
     }
     dispatcher.incrementMetric('mergeConflictsDialogDismissalCount')

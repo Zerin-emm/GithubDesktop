@@ -9,9 +9,6 @@ const channel = getChannel()
 
 const s = JSON.stringify
 
-const optionalStringReplacement = (value: string | undefined) =>
-  value === undefined || value.length === 0 ? 'undefined' : s(value)
-
 export function getReplacements() {
   const isDevBuild = channel === 'development'
 
@@ -28,13 +25,7 @@ export function getReplacements() {
     __DEV__: isDevBuild,
     __DEV_SECRETS__: isDevBuild || !process.env.DESKTOP_OAUTH_CLIENT_SECRET,
     __RELEASE_CHANNEL__: s(channel),
-    __UPDATES_URL__: s(process.env.DESKTOP_E2E_UPDATES_URL ?? getUpdatesURL()),
-    __ERROR_REPORTING_ENDPOINT__: optionalStringReplacement(
-      process.env.DESKTOP_ERROR_REPORTING_ENDPOINT
-    ),
-    __NON_FATAL_ERROR_REPORTING_ENDPOINT__: optionalStringReplacement(
-      process.env.DESKTOP_NON_FATAL_ERROR_REPORTING_ENDPOINT
-    ),
+    __UPDATES_URL__: s(getUpdatesURL()),
     __SHA__: s(getSHA()),
     'process.platform': s(process.platform),
     'process.env.NODE_ENV': s(process.env.NODE_ENV || 'development'),

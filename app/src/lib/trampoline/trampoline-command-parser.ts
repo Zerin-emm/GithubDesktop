@@ -1,5 +1,6 @@
 import { parseEnumValue } from '../enum'
 import { assertNever } from '../fatal-error'
+import { sendNonFatalException } from '../helpers/non-fatal-exception'
 import {
   ITrampolineCommand,
   TrampolineCommandIdentifier,
@@ -165,5 +166,6 @@ export class TrampolineCommandParser {
 
   private logCommandCreationError(error: Error) {
     log.error('Error creating trampoline command:', error)
+    sendNonFatalException('trampolineCommandParser', error)
   }
 }

@@ -21,7 +21,7 @@ export class AttributeMismatch extends React.Component<IAttributeMismatchProps> 
         title={
           __DARWIN__
             ? 'Update Existing Git LFS Filters?'
-            : 'Update existing Git LFS filters?'
+            : "更新现有的 Git LFS 过滤器？"
         }
         onDismissed={this.props.onDismissed}
         onSubmit={this.onSubmit}
@@ -40,9 +40,9 @@ export class AttributeMismatch extends React.Component<IAttributeMismatchProps> 
         <DialogFooter>
           <OkCancelButtonGroup
             okButtonText={
-              __DARWIN__ ? 'Update Existing Filters' : 'Update existing filters'
+              __DARWIN__ ? 'Update Existing Filters' : "更新现有过滤器"
             }
-            cancelButtonText={__DARWIN__ ? 'Not Now' : 'Not now'}
+            cancelButtonText={__DARWIN__ ? "暂不" : "暂不"}
           />
         </DialogFooter>
       </Dialog>

@@ -30,6 +30,8 @@ import {
   ErrorWithMetadata,
   IErrorMetadata,
 } from '../error-with-metadata'
+import { queueWorkHigh } from '../../lib/queue-work'
+
 import {
   reset,
   GitResetMode,
@@ -73,7 +75,6 @@ import {
   createBranch,
   updateRemoteHEAD,
   getRemoteHEAD,
-  MergeOptions,
 } from '../git'
 import { GitError as DugiteError } from '../../lib/git'
 import { GitError } from 'dugite'
@@ -596,33 +597,26 @@ export class GitStore extends BaseStore {
    * Load local commits into memory for the current repository.
    *
    * @param branch The branch to query for unpublished commits.
-   * @param skip The amount of commits to skip to support pagination loading of local commits. If skip is undefined,
-   * this will reset the local commits cache and treat it as a pagination reset.
    *
    * If the tip of the repository does not have commits (i.e. is unborn), this
    * should be invoked with `null`, which clears any existing commits from the
    * store.
-   *
-   * @returns The list of commit SHAs that were ammended to the list of commits, or null if not applicable
    */
-  public async loadLocalCommits(
-    branch: Branch | null,
-    skip?: number
-  ): Promise<string[] | null> {
+  public async loadLocalCommits(branch: Branch | null): Promise<void> {
     if (branch === null) {
       this._localCommitSHAs = []
-      return null
+      return
     }
 
     let localCommits: ReadonlyArray<Commit> | undefined
     if (branch.upstream) {
       const range = revRange(branch.upstream, branch.name)
       localCommits = await this.performFailableOperation(() =>
-        getCommits(this.repository, range, CommitBatchSize, skip)
+        getCommits(this.repository, range, CommitBatchSize)
       )
     } else {
       localCommits = await this.performFailableOperation(() =>
-        getCommits(this.repository, 'HEAD', CommitBatchSize, skip, [
+        getCommits(this.repository, 'HEAD', CommitBatchSize, undefined, [
           '--not',
           '--remotes',
         ])
@@ -630,29 +624,12 @@ export class GitStore extends BaseStore {
     }
 
     if (!localCommits) {
-      return null
+      return
     }
 
     this.storeCommits(localCommits)
-
-    let newCommitSHAs: string[]
-
-    if (skip !== undefined) {
-      // perform a soft ammend to the list of local commits
-      const previousSHAs = new Set(this._localCommitSHAs)
-      newCommitSHAs = localCommits
-        .map(c => c.sha)
-        .filter(sha => !previousSHAs.has(sha))
-      this._localCommitSHAs = [...this._localCommitSHAs, ...newCommitSHAs]
-    } else {
-      // reset the local commits since its a page reset
-      newCommitSHAs = localCommits.map(c => c.sha)
-      this._localCommitSHAs = Array.from(newCommitSHAs)
-    }
-
+    this._localCommitSHAs = localCommits.map(c => c.sha)
     this.emitUpdate()
-
-    return newCommitSHAs
   }
 
   /**
@@ -1464,10 +1441,7 @@ export class GitStore extends BaseStore {
 
   /** Update the last fetched date. */
   public async updateLastFetched() {
-    const fetchHeadPath = Path.join(
-      this.repository.resolvedGitDir,
-      'FETCH_HEAD'
-    )
+    const fetchHeadPath = Path.join(this.repository.path, '.git', 'FETCH_HEAD')
 
     try {
       const fstat = await stat(fetchHeadPath)
@@ -1489,7 +1463,7 @@ export class GitStore extends BaseStore {
   /** Merge the named branch into the current branch. */
   public merge(
     branch: Branch,
-    options?: MergeOptions
+    isSquash: boolean = false
   ): Promise<MergeResult | undefined> {
     if (this.tip.kind !== TipState.Valid) {
       throw new Error(
@@ -1498,22 +1472,9 @@ export class GitStore extends BaseStore {
     }
 
     const currentBranch = this.tip.branch.name
-    let aborted = false
-    const onHookFailure = options?.onHookFailure
 
     return this.performFailableOperation(
-      () =>
-        merge(this.repository, branch.name, {
-          ...options,
-          onHookFailure:
-            onHookFailure === undefined
-              ? undefined
-              : (hookName, terminalOutput) =>
-                  onHookFailure(hookName, terminalOutput).then(result => {
-                    aborted = result === 'abort'
-                    return result
-                  }),
-        }).catch(e => (aborted ? MergeResult.Failed : Promise.reject(e))),
+      () => merge(this.repository, branch.name, isSquash),
       {
         gitContext: {
           kind: 'merge',
@@ -1552,11 +1513,14 @@ export class GitStore extends BaseStore {
 
     const submodules = await listSubmodules(this.repository)
 
-    for (const file of files) {
+    await queueWorkHigh(files, async file => {
       const foundSubmodule = submodules.some(s => s.path === file.path)
 
       if (file.status.kind !== AppFileStatusKind.Deleted && !foundSubmodule) {
         if (moveToTrash) {
+          // N.B. moveItemToTrash can take a fair bit of time which is why we're
+          // running it inside this work queue that spreads out the calls across
+          // as many animation frames as it needs to.
           try {
             await this.shell.moveItemToTrash(
               Path.resolve(this.repository.path, file.path)
@@ -1599,7 +1563,7 @@ export class GitStore extends BaseStore {
         pathsToCheckout.push(file.path)
         pathsToReset.push(file.path)
       }
-    }
+    })
 
     // Check the index to see which files actually have changes there as compared to HEAD
     const changedFilesInIndex = await getIndexChanges(this.repository)

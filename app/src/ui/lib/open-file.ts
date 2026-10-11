@@ -5,9 +5,9 @@ export async function openFile(
   fullPath: string,
   dispatcher: Dispatcher
 ): Promise<void> {
-  const errorMessage = await shell.openPath(fullPath)
+  const result = await shell.openExternal(`file://${fullPath}`)
 
-  if (errorMessage !== '') {
+  if (!result) {
     const error = {
       name: 'no-external-program',
       message: `Unable to open file ${fullPath} in an external program. Please check you have a program associated with this file extension`,

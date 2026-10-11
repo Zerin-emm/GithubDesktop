@@ -420,6 +420,14 @@
         user-select: none;
         white-space: nowrap;
       }
+
+      .octicon {
+        height: 8px;
+        fill: var(--error-color);
+        display: inline-block;
+        margin-left: 3px;
+        margin-bottom: -1px;
+      }
     }
 
     .popover-component.whitespace-hint {
@@ -427,19 +435,6 @@
       &,
       * {
         cursor: default;
-      }
-    }
-
-    .no-newline-indicator {
-      font-style: italic;
-      color: var(--diff-alt-text-color);
-      margin-left: 4px;
-
-      .octicon {
-        height: 8px;
-        fill: var(--error-color);
-        display: inline-block;
-        margin-bottom: -1px;
       }
     }
   }

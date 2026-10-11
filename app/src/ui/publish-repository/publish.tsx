@@ -143,7 +143,7 @@ export class Publish extends React.Component<IPublishProps, IPublishState> {
     return (
       <Dialog
         id="publish-repository"
-        title={__DARWIN__ ? 'Publish Repository' : 'Publish repository'}
+        title={__DARWIN__ ? 'Publish Repository' : "发布仓库"}
         onDismissed={this.props.onDismissed}
         onSubmit={this.publishRepository}
         disabled={this.state.publishing}
@@ -271,13 +271,13 @@ export class Publish extends React.Component<IPublishProps, IPublishState> {
   }
 
   private renderSignInTab(tab: PublishTab) {
-    const signInTitle = __DARWIN__ ? 'Sign In' : 'Sign in'
+    const signInTitle = __DARWIN__ ? 'Sign In' : "登录"
     switch (tab) {
       case PublishTab.DotCom:
         return (
           <CallToAction actionTitle={signInTitle} onAction={this.signInDotCom}>
             <div>
-              Sign in to your GitHub.com account to access your repositories.
+              登录你的 GitHub.com 账户以访问你的仓库。
             </div>
           </CallToAction>
         )
@@ -288,8 +288,7 @@ export class Publish extends React.Component<IPublishProps, IPublishState> {
             onAction={this.signInEnterprise}
           >
             <div>
-              If you are using GitHub Enterprise at work, sign in to it to get
-              access to your repositories.
+              如果你在工作中使用 GitHub Enterprise,请登录以访问你的仓库。
             </div>
           </CallToAction>
         )
@@ -308,7 +307,7 @@ export class Publish extends React.Component<IPublishProps, IPublishState> {
         <DialogFooter>
           <OkCancelButtonGroup
             okButtonText={
-              __DARWIN__ ? 'Publish Repository' : 'Publish repository'
+              __DARWIN__ ? 'Publish Repository' : "发布仓库"
             }
             okButtonDisabled={disabled}
           />

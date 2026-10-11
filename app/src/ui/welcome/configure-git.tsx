@@ -19,18 +19,17 @@ export class ConfigureGit extends React.Component<IConfigureGitProps, {}> {
       <section id="configure-git" aria-label="Configure Git">
         <h1 className="welcome-title">Configure Git</h1>
         <p className="welcome-text">
-          This is used to identify the commits you create. Anyone will be able
-          to see this information if you publish commits.
+          这用于识别你创建的提交。如果你发布提交，任何人都可以看到这些信息.
         </p>
 
         <ConfigureGitUser
           accounts={this.props.accounts}
           onSave={this.props.done}
-          saveLabel="Finish"
+          saveLabel="完成"
           globalUserName={this.props.globalUserName}
           globalUserEmail={this.props.globalUserEmail}
         >
-          <Button onClick={this.cancel}>Cancel</Button>
+          <Button onClick={this.cancel}>取消</Button>
         </ConfigureGitUser>
       </section>
     )

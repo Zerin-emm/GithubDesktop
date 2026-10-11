@@ -188,7 +188,7 @@ export class CloneableRepositoryFilterList extends React.PureComponent<ICloneabl
         renderPostFilter={this.renderPostFilter}
         renderPreFilter={this.props.renderPreFilter}
         onItemClick={this.props.onItemClicked ? this.onItemClick : undefined}
-        placeholderText={'Filter your repositories'}
+        placeholderText={"筛选存储库"}
         getGroupAriaLabel={this.getGroupAriaLabelGetter(groups)}
       />
     )
@@ -222,7 +222,7 @@ export class CloneableRepositoryFilterList extends React.PureComponent<ICloneabl
   }
 
   private getYourRepositoriesLabel = () => {
-    return __DARWIN__ ? 'Your Repositories' : 'Your repositories'
+    return __DARWIN__ ? 'Your Repositories' : "您的存储库"
   }
 
   private renderGroupHeader = (identifier: string) => {
@@ -258,7 +258,7 @@ export class CloneableRepositoryFilterList extends React.PureComponent<ICloneabl
   }
 
   private renderPostFilter = () => {
-    const tooltip = 'Refresh the list of repositories'
+    const tooltip = "刷新存储库列表"
 
     return (
       <Button
@@ -288,7 +288,7 @@ export class CloneableRepositoryFilterList extends React.PureComponent<ICloneabl
       return (
         <div className="no-items no-results-found">
           <div>
-            Sorry, I can't find any repository matching{' '}
+            没有匹配的存储库{' '}
             <Ref>{this.props.filterText}</Ref>
           </div>
         </div>
@@ -298,12 +298,12 @@ export class CloneableRepositoryFilterList extends React.PureComponent<ICloneabl
     return (
       <div className="no-items empty-repository-list">
         <div>
-          Looks like there are no repositories for{' '}
-          <Ref>{this.props.account.login}</Ref> on {account.friendlyEndpoint}.{' '}
+          没有仓库{' '}
+          <Ref>{this.props.account.login}</Ref> 于 ⚠ {account.friendlyEndpoint}.{' '}
           <LinkButton onClick={this.refreshRepositories}>
-            Refresh this list
+            刷新此列表
           </LinkButton>{' '}
-          if you've created a repository recently.
+          如果您最近创建了存储库。
         </div>
       </div>
     )

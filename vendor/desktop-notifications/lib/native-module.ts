@@ -2,6 +2,7 @@ import { supportsNotifications } from './notification-support'
 import { notificationCallback } from './notification-callback'
 import { DesktopNotificationPermission } from './notification-permission'
 import { INotificationOptions } from './notification-options'
+import { v4 as uuidv4 } from 'uuid'
 
 // The native binary will be loaded lazily to avoid any possible crash at start
 // time, which are harder to trace.
@@ -45,14 +46,14 @@ export const requestNotificationsPermission: () => Promise<boolean> = () =>
  * @param userInfo (Optional) An object with any information that needs to be
  * passed to the notification callback when the user clicks on the notification.
  * @returns The ID of the notification displayed. This ID can be used to close
- * the notification. Returns null if native submission fails.
+ * the notification.
  */
 export const showNotification: (
   title: string,
   body: string,
   userInfo?: Record<string, any>
 ) => Promise<string | null> = async (...args) => {
-  const id = crypto.randomUUID()
+  const id = uuidv4()
   try {
     await getNativeModule()?.showNotification(id, ...args)
   } catch (e) {

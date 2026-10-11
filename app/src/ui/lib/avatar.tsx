@@ -10,16 +10,11 @@ import {
   supportsAvatarsAPI,
 } from '../../lib/endpoint-capabilities'
 import { Account } from '../../models/account'
-import {
-  getLegacyStealthEmailForUser,
-  getStealthEmailForUser,
-  parseStealthEmail,
-} from '../../lib/email'
+import { parseStealthEmail } from '../../lib/email'
 import noop from 'lodash/noop'
 import { offsetFrom } from '../../lib/offset-from'
 import { ExpiringOperationCache } from './expiring-operation-cache'
 import { forceUnwrap } from '../../lib/fatal-error'
-import { IKnownBot, knownDotComBots } from '../../models/dot-com-bots'
 
 const avatarTokenCache = new ExpiringOperationCache<
   { endpoint: string; accounts: ReadonlyArray<Account> },
@@ -93,14 +88,26 @@ const botAvatarCache = new ExpiringOperationCache<
       : Infinity
 )
 
-const knownAvatars: ReadonlyArray<IAvatarUser> = knownDotComBots
-  .flatMap<[IKnownBot, string]>(bot => [
-    [bot, getStealthEmailForUser(bot.userId, bot.login, bot.endpoint)],
-    [bot, getLegacyStealthEmailForUser(bot.login, bot.endpoint)],
-  ])
-  .map(([{ login: name, avatarURL, endpoint }, email]) => {
-    return { name, avatarURL, endpoint, email }
-  })
+const dotComBot = (login: string, id: number, integrationId: number) => {
+  const avatarURL = `https://avatars.githubusercontent.com/in/${integrationId}?v=4`
+  const endpoint = getDotComAPIEndpoint()
+  const stealthHost = 'users.noreply.github.com'
+  return [
+    {
+      email: `${id}+${login}@${stealthHost}`,
+      name: login,
+      avatarURL,
+      endpoint,
+    },
+    { email: `${login}@${stealthHost}`, name: login, avatarURL, endpoint },
+  ]
+}
+
+const knownAvatars: ReadonlyArray<IAvatarUser> = [
+  ...dotComBot('dependabot[bot]', 49699333, 29110),
+  ...dotComBot('github-actions[bot]', 41898282, 15368),
+  ...dotComBot('github-pages[bot]', 52472962, 34598),
+]
 
 // Preload some of the more popular bot avatars so we don't have to hit the API
 knownAvatars.forEach(user =>
@@ -164,8 +171,6 @@ interface IAvatarProps {
 
   /** Defaults true */
   readonly tooltip?: boolean
-
-  readonly 'aria-hidden'?: React.AriaAttributes['aria-hidden']
 }
 
 interface IAvatarState {
@@ -240,7 +245,7 @@ function getAvatarUrlCandidates(
       url.searchParams.set('s', `${size}`)
 
       candidates.push(url.toString())
-    } catch {
+    } catch (e) {
       // This should never happen since URL#constructor only throws for invalid
       // URLs which we can expect the API to not give us
       candidates.push(avatarURL)
@@ -415,7 +420,6 @@ export class Avatar extends React.Component<IAvatarProps, IAvatarState> {
             onLoad={this.onImageLoad}
             onError={this.onImageError}
             style={{ display: imageError ? 'none' : undefined }}
-            aria-hidden={this.props['aria-hidden']}
           />
         )}
       </>

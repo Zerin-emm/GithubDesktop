@@ -31,7 +31,7 @@ export class OverwriteStash extends React.Component<
   }
 
   public render() {
-    const title = __DARWIN__ ? 'Overwrite Stash?' : 'Overwrite stash?'
+    const title = __DARWIN__ ? 'Overwrite Stash?' : "覆盖临时保存的更改？"
 
     return (
       <Dialog
@@ -52,7 +52,7 @@ export class OverwriteStash extends React.Component<
           </Row>
         </DialogContent>
         <DialogFooter>
-          <OkCancelButtonGroup destructive={true} okButtonText="Overwrite" />
+          <OkCancelButtonGroup destructive={true} okButtonText="覆盖" />
         </DialogFooter>
       </Dialog>
     )

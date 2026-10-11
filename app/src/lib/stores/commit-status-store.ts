@@ -1,7 +1,7 @@
 import pLimit from 'p-limit'
 import QuickLRU from 'quick-lru'
 
-import { Disposable } from 'event-kit'
+import { Disposable, DisposableLike } from 'event-kit'
 import xor from 'lodash/xor'
 import { Account } from '../../models/account'
 import { GitHubRepository } from '../../models/github-repository'
@@ -463,7 +463,7 @@ export class CommitStatusStore {
     ref: string,
     callback: StatusCallBack,
     branchName?: string
-  ): Disposable {
+  ): DisposableLike {
     const key = getCacheKeyForRepository(repository, ref)
     const subscription = this.getOrCreateSubscription(
       repository,

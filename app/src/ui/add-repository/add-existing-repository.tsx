@@ -69,16 +69,11 @@ export class AddExistingRepository extends React.Component<
   private onTrustDirectory = async () => {
     this.setState({ isTrustingRepository: true })
     const { repositoryUnsafePath, path } = this.state
-    try {
-      if (repositoryUnsafePath) {
-        await addSafeDirectory(repositoryUnsafePath)
-      }
-      await this.validatePath(path)
-    } catch (error) {
-      this.props.dispatcher.postError(error)
-    } finally {
-      this.setState({ isTrustingRepository: false })
+    if (repositoryUnsafePath) {
+      await addSafeDirectory(repositoryUnsafePath)
     }
+    await this.validatePath(path)
+    this.setState({ isTrustingRepository: false })
   }
 
   private async updatePath(path: string) {
@@ -187,7 +182,7 @@ export class AddExistingRepository extends React.Component<
       <>
         <p>This directory does not appear to be a Git repository.</p>
         <p>
-          Would you like to{' '}
+          要{' '}
           <LinkButton onClick={this.onCreateRepositoryClicked}>
             create a repository
           </LinkButton>{' '}
@@ -228,7 +223,7 @@ export class AddExistingRepository extends React.Component<
     return (
       <Dialog
         id="add-existing-repository"
-        title={__DARWIN__ ? 'Add Local Repository' : 'Add local repository'}
+        title={__DARWIN__ ? 'Add Local Repository' : "添加本地存储库"}
         onSubmit={this.addRepository}
         onDismissed={this.props.onDismissed}
         loading={this.state.isTrustingRepository}
@@ -238,19 +233,19 @@ export class AddExistingRepository extends React.Component<
             <TextBox
               ref={this.pathTextBoxRef}
               value={this.state.path}
-              label={__DARWIN__ ? 'Local Path' : 'Local path'}
-              placeholder="repository path"
+              label={__DARWIN__ ? 'Local Path' : "本地路径"}
+              placeholder="存储库路径"
               onValueChanged={this.onPathChanged}
               ariaDescribedBy="add-existing-repository-path-error"
             />
-            <Button onClick={this.showFilePicker}>Choose…</Button>
+            <Button onClick={this.showFilePicker}>选择…</Button>
           </Row>
           {this.renderErrors()}
         </DialogContent>
 
         <DialogFooter>
           <OkCancelButtonGroup
-            okButtonText={__DARWIN__ ? 'Add Repository' : 'Add repository'}
+            okButtonText={__DARWIN__ ? 'Add Repository' : "添加存储库"}
           />
         </DialogFooter>
       </Dialog>

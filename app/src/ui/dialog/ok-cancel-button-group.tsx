@@ -167,7 +167,7 @@ export class OkCancelButtonGroup extends React.Component<
         tooltip={this.props.cancelButtonTitle}
         type={this.props.destructive === true ? 'submit' : 'reset'}
       >
-        {this.props.cancelButtonText || 'Cancel'}
+        {this.props.cancelButtonText || '取消'}
       </Button>
     )
   }

@@ -2,7 +2,6 @@ import escapeRegExp from 'lodash/escapeRegExp'
 import { GitHubRepository } from '../../models/github-repository'
 import { getHTMLURL } from '../api'
 import { INodeFilter } from './node-filter'
-import { isElement } from './is-element'
 
 /** Return a regexp that matches a full issue, pull request, or discussion url
  * including the anchor */
@@ -57,11 +56,11 @@ export class IssueLinkFilter implements INodeFilter {
    * - https://github.com/github/github/discussions/99872#discussioncomment-1858985
    */
   public createFilterTreeWalker(doc: Document): TreeWalker {
-    return doc.createTreeWalker(doc.body, NodeFilter.SHOW_ELEMENT, {
+    return doc.createTreeWalker(doc, NodeFilter.SHOW_ELEMENT, {
       acceptNode: (el: Element) => {
         return (el.parentNode !== null &&
           ['CODE', 'PRE', 'A'].includes(el.parentNode.nodeName)) ||
-          !isElement(el, 'a') ||
+          !(el instanceof HTMLAnchorElement) ||
           el.href !== el.innerText ||
           !this.isGitHubIssuePullDiscussionLink(el)
           ? NodeFilter.FILTER_SKIP
@@ -106,7 +105,7 @@ export class IssueLinkFilter implements INodeFilter {
    */
   public async filter(node: Node): Promise<ReadonlyArray<Node> | null> {
     const { textContent: text } = node
-    if (!isElement(node, 'a') || text === null) {
+    if (!(node instanceof HTMLAnchorElement) || text === null) {
       return null
     }
 

@@ -142,7 +142,6 @@ export class CICheckRunRerunDialog extends React.Component<
           checkRuns={this.state.rerunnable}
           notExpandable={true}
           isCondensedView={true}
-          hasStatusTooltip={true}
         />
       </div>
     )

@@ -48,7 +48,7 @@ export class ChooseForkSettings extends React.Component<
   public render() {
     const items = [
       {
-        title: 'To contribute to the parent project',
+        title: "为了为父项目做贡献",
         description: (
           <>
             We will help you contribute to the{' '}
@@ -61,7 +61,7 @@ export class ChooseForkSettings extends React.Component<
         key: ForkContributionTarget.Parent,
       },
       {
-        title: 'For my own purposes',
+        title: "出于自己的目的",
         description: (
           <>
             We will help you contribute to the{' '}
@@ -76,7 +76,7 @@ export class ChooseForkSettings extends React.Component<
     return (
       <Dialog
         id="fork-settings"
-        title="How are you planning to use this fork?"
+        title="你打算如何使用此 fork？"
         onSubmit={this.onSubmit}
         onDismissed={this.props.onDismissed}
       >
@@ -98,7 +98,7 @@ export class ChooseForkSettings extends React.Component<
         </DialogContent>
 
         <DialogFooter>
-          <OkCancelButtonGroup okButtonText="Continue" />
+          <OkCancelButtonGroup okButtonText="继续" />
         </DialogFooter>
       </Dialog>
     )

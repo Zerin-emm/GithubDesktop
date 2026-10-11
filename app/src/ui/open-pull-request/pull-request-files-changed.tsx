@@ -9,7 +9,7 @@ import { openFile } from '../lib/open-file'
 import { Resizable } from '../resizable'
 import { FileList } from '../history/file-list'
 import { IMenuItem, showContextualMenu } from '../../lib/menu-item'
-import { pathExists } from '../../lib/path-exists'
+import { pathExists } from '../lib/path-exists'
 import {
   CopyFilePathLabel,
   CopyRelativeFilePathLabel,
@@ -19,7 +19,7 @@ import {
   RevealInFileManagerLabel,
 } from '../lib/context-menu'
 import { revealInFileManager } from '../../lib/app-shell'
-import { writeClipboardText } from '../main-process-proxy'
+import { clipboard } from 'electron'
 import { IConstrainedValue } from '../../lib/app-state'
 import { clamp } from '../../lib/clamp'
 import { getDotComAPIEndpoint } from '../../lib/api'
@@ -166,7 +166,7 @@ export class PullRequestFilesChanged extends React.Component<
         {
           label: __DARWIN__
             ? 'File Does Not Exist on Disk'
-            : 'File does not exist on disk',
+            : "文件不存在于磁盘上",
           enabled: false,
         },
       ])
@@ -201,11 +201,11 @@ export class PullRequestFilesChanged extends React.Component<
       { type: 'separator' },
       {
         label: CopyFilePathLabel,
-        action: () => writeClipboardText(fullPath),
+        action: () => clipboard.writeText(fullPath),
       },
       {
         label: CopyRelativeFilePathLabel,
-        action: () => writeClipboardText(Path.normalize(file.path)),
+        action: () => clipboard.writeText(Path.normalize(file.path)),
       },
       { type: 'separator' },
     ]
@@ -216,7 +216,7 @@ export class PullRequestFilesChanged extends React.Component<
       gitHubRepository && gitHubRepository.endpoint !== getDotComAPIEndpoint()
 
     items.push({
-      label: `View on GitHub${isEnterprise ? ' Enterprise' : ''}`,
+      label: `在 GitHub 上查看${isEnterprise ? ' Enterprise' : ''}`,
       action: () => this.onViewOnGitHub(file),
       enabled: nonLocalCommitSHA !== null && gitHubRepository !== null,
     })

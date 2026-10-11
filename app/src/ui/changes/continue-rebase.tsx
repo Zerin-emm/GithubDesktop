@@ -51,7 +51,7 @@ export class ContinueRebase extends React.Component<IContinueRebaseProps, {}> {
 
     const warnAboutUntrackedFiles = this.props.hasUntrackedChanges ? (
       <div className="warning-untracked-files">
-        Untracked files will be excluded
+        未跟踪的文件将被排除
       </div>
     ) : undefined
 

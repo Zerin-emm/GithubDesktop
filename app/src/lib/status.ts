@@ -98,7 +98,7 @@ export function getUnmergedStatusEntryDescription(
   entry: UnmergedStatusEntry,
   branch?: string
 ): string {
-  const suffix = branch ? ` from ${branch}` : ''
+  const suffix = branch ? ` 自 ${branch}` : ''
 
   switch (entry) {
     case GitStatusEntry.Added:
@@ -119,7 +119,7 @@ export function getLabelForManualResolutionOption(
   entry: UnmergedStatusEntry,
   branch?: string
 ): string {
-  const suffix = branch ? ` from ${branch}` : ''
+  const suffix = branch ? ` 自 ${branch}` : ''
 
   switch (entry) {
     case GitStatusEntry.Added:
@@ -127,7 +127,7 @@ export function getLabelForManualResolutionOption(
     case GitStatusEntry.UpdatedButUnmerged:
       return `Use the modified file${suffix}`
     case GitStatusEntry.Deleted:
-      const deleteSuffix = branch ? ` on ${branch}` : ''
+      const deleteSuffix = branch ? ` 在 ${branch}` : ''
       return `Do not include this file${deleteSuffix}`
     default:
       return assertNever(entry, 'Unknown status entry to format')

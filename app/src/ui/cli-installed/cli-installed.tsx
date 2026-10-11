@@ -15,7 +15,7 @@ export class CLIInstalled extends React.Component<ICLIInstalledProps, {}> {
         title={
           __DARWIN__
             ? 'Command Line Tool Installed'
-            : 'Command line tool installed'
+            : "命令行工具已安装"
         }
         onDismissed={this.props.onDismissed}
         onSubmit={this.props.onDismissed}
@@ -26,7 +26,7 @@ export class CLIInstalled extends React.Component<ICLIInstalledProps, {}> {
             <strong>{InstalledCLIPath}</strong>.
           </div>
         </DialogContent>
-        <DefaultDialogFooter buttonText="Ok" />
+        <DefaultDialogFooter buttonText="确定" />
       </Dialog>
     )
   }

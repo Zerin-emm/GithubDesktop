@@ -12,6 +12,7 @@ import { Row } from '../lib/row'
 import { DialogContent, DialogPreferredFocusClassName } from '../dialog'
 import { Avatar } from '../lib/avatar'
 import { CallToAction } from '../lib/call-to-action'
+import { enableMultipleEnterpriseAccounts } from '../../lib/feature-flag'
 import { getHTMLURL } from '../../lib/api'
 
 interface IAccountsProps {
@@ -40,9 +41,19 @@ export class Accounts extends React.Component<IAccountsProps, {}> {
           : this.renderSignIn(SignInType.DotCom)}
 
         <h2>GitHub Enterprise</h2>
-        {this.renderMultipleEnterpriseAccounts()}
+        {enableMultipleEnterpriseAccounts()
+          ? this.renderMultipleEnterpriseAccounts()
+          : this.renderSingleEnterpriseAccount()}
       </DialogContent>
     )
+  }
+
+  private renderSingleEnterpriseAccount() {
+    const enterpriseAccount = this.props.accounts.find(isEnterpriseAccount)
+
+    return enterpriseAccount
+      ? this.renderAccount(enterpriseAccount, SignInType.Enterprise)
+      : this.renderSignIn(SignInType.Enterprise)
   }
 
   private renderMultipleEnterpriseAccounts() {
@@ -57,7 +68,7 @@ export class Accounts extends React.Component<IAccountsProps, {}> {
           this.renderSignIn(SignInType.Enterprise)
         ) : (
           <Button onClick={this.props.onEnterpriseSignIn}>
-            Add GitHub Enterprise account
+            添加 GitHub Enterprise 账户
           </Button>
         )}
       </>
@@ -82,7 +93,8 @@ export class Accounts extends React.Component<IAccountsProps, {}> {
         <div className="user-info-container">
           <Avatar accounts={this.props.accounts} user={avatarUser} />
           <div className="user-info">
-            {isEnterpriseAccount(account) ? (
+            {enableMultipleEnterpriseAccounts() &&
+            isEnterpriseAccount(account) ? (
               <>
                 <div className="account-title">
                   {account.name === account.login
@@ -100,7 +112,7 @@ export class Accounts extends React.Component<IAccountsProps, {}> {
           </div>
         </div>
         <Button onClick={this.logout(account)} className={className}>
-          {__DARWIN__ ? 'Sign Out' : 'Sign out'}
+          {__DARWIN__ ? 'Sign Out' : "退出"}
         </Button>
       </Row>
     )
@@ -127,7 +139,7 @@ export class Accounts extends React.Component<IAccountsProps, {}> {
             buttonClassName={DialogPreferredFocusClassName}
           >
             <div>
-              Sign in to your GitHub.com account to access your repositories.
+              登录你的 GitHub.com 账户以访问你的仓库。
             </div>
           </CallToAction>
         )
@@ -139,8 +151,7 @@ export class Accounts extends React.Component<IAccountsProps, {}> {
             onAction={this.onEnterpriseSignIn}
           >
             <div>
-              If you are using GitHub Enterprise at work, sign in to it to get
-              access to your repositories.
+              如果你在工作中使用 GitHub Enterprise,请登录以访问你的仓库。
             </div>
           </CallToAction>
         )

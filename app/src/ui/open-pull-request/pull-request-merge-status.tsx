@@ -31,8 +31,7 @@ export class PullRequestMergeStatus extends React.Component<IPullRequestMergeSta
       case ComputedAction.Invalid:
         return (
           <span className="pr-merge-status-invalid">
-            <strong>Error checking merge status.</strong> Unable to merge
-            unrelated histories in this repository
+            <strong>Error checking merge status.</strong> 无法在此仓库中合并不相关的历史记录
           </span>
         )
       case ComputedAction.Clean:

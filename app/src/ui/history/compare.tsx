@@ -33,7 +33,6 @@ import { doMergeCommitsExistAfterCommit } from '../../lib/git'
 import { KeyboardInsertionData } from '../lib/list'
 import { Account } from '../../models/account'
 import { Emoji } from '../../lib/emoji'
-import { formatNumber } from '../../lib/format-number'
 
 interface ICompareSidebarProps {
   readonly repository: Repository
@@ -61,8 +60,8 @@ interface ICompareSidebarProps {
   readonly isMultiCommitOperationInProgress?: boolean
   readonly shasToHighlight: ReadonlyArray<string>
   readonly accounts: ReadonlyArray<Account>
-  readonly preferAbsoluteDates: boolean
 }
+
 interface ICompareSidebarState {
   /**
    * This branch should only be used when tracking interactions that the user is performing.
@@ -220,19 +219,18 @@ export class CompareSidebar extends React.Component<
 
     let emptyListMessage: string | JSX.Element
     if (formState.kind === HistoryTabMode.History) {
-      emptyListMessage = 'No history'
+      emptyListMessage = "无记录"
     } else {
       const currentlyComparedBranchName = formState.comparisonBranch.name
 
       emptyListMessage =
         formState.comparisonMode === ComparisonMode.Ahead ? (
           <p>
-            The compared branch (<Ref>{currentlyComparedBranchName}</Ref>) is up
-            to date with your branch
+            比较的分支 (<Ref>{currentlyComparedBranchName}</Ref>) 是您分支的最新信息
           </p>
         ) : (
           <p>
-            Your branch is up to date with the compared branch (
+            您的分支与比较的分支是最新的 (
             <Ref>{currentlyComparedBranchName}</Ref>)
           </p>
         )
@@ -286,7 +284,6 @@ export class CompareSidebar extends React.Component<
         }
         keyboardReorderData={this.state.keyboardReorderData}
         accounts={this.props.accounts}
-        preferAbsoluteDates={this.props.preferAbsoluteDates}
       />
     )
   }
@@ -420,10 +417,8 @@ export class CompareSidebar extends React.Component<
     return (
       <div className="compare-content">
         <TabBar selectedIndex={selectedTab} onTabClicked={this.onTabClicked}>
-          <span>{`Behind (${formatNumber(
-            formState.aheadBehind.behind
-          )})`}</span>
-          <span>{`Ahead (${formatNumber(formState.aheadBehind.ahead)})`}</span>
+          <span>{`Behind (${formState.aheadBehind.behind})`}</span>
+          <span>{`Ahead (${formState.aheadBehind.ahead})`}</span>
         </TabBar>
         {this.renderActiveTab(formState)}
       </div>
@@ -732,7 +727,7 @@ function getPlaceholderText(state: ICompareState) {
   const { branches, formState } = state
 
   if (!branches.some(b => !b.isDesktopForkRemoteBranch)) {
-    return __DARWIN__ ? 'No Branches to Compare' : 'No branches to compare'
+    return __DARWIN__ ? 'No Branches to Compare' : "没有分支"
   } else if (formState.kind === HistoryTabMode.History) {
     return __DARWIN__
       ? 'Select Branch to Compare…'

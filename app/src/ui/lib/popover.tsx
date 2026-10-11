@@ -50,22 +50,12 @@ export enum PopoverAppearEffect {
 
 export enum PopoverDecoration {
   None = 'none',
-  Bordered = 'bordered',
   Balloon = 'balloon',
 }
 
 const TipSize = 8
 const TipCornerPadding = TipSize
 export const PopoverScreenBorderPadding = 10
-
-const hasPopoverComponentDecoration = (
-  decoration: PopoverDecoration | undefined
-) =>
-  decoration === PopoverDecoration.Balloon ||
-  decoration === PopoverDecoration.Bordered
-
-const hasPopoverTip = (decoration: PopoverDecoration | undefined) =>
-  decoration === PopoverDecoration.Balloon
 
 interface IPopoverProps {
   readonly onClickOutside?: (event?: MouseEvent) => void
@@ -106,7 +96,6 @@ export class Popover extends React.Component<IPopoverProps, IPopoverState> {
   private contentDivRef = React.createRef<HTMLDivElement>()
   private tipDivRef = React.createRef<HTMLDivElement>()
   private floatingCleanUp: (() => void) | null = null
-  private isUnmounted = false
 
   public constructor(props: IPopoverProps) {
     super(props)
@@ -157,7 +146,7 @@ export class Popover extends React.Component<IPopoverProps, IPopoverState> {
 
     const tipDiv = this.tipDivRef.current
     const extraOffset = anchorOffset ?? 0
-    const popoverOffset = hasPopoverTip(decoration) ? TipSize : 0
+    const popoverOffset = decoration === PopoverDecoration.Balloon ? TipSize : 0
 
     const middleware = [
       offset(popoverOffset + extraOffset),
@@ -184,7 +173,7 @@ export class Popover extends React.Component<IPopoverProps, IPopoverState> {
       }),
     ]
 
-    if (hasPopoverTip(decoration) && tipDiv) {
+    if (decoration === PopoverDecoration.Balloon && tipDiv) {
       middleware.push(arrow({ element: tipDiv, padding: TipCornerPadding }))
     }
 
@@ -194,13 +183,10 @@ export class Popover extends React.Component<IPopoverProps, IPopoverState> {
       middleware,
     })
 
-    if (!this.isUnmounted) {
-      this.setState({ position })
-    }
+    this.setState({ position })
   }
 
   public componentDidMount() {
-    this.isUnmounted = false
     document.addEventListener('click', this.onDocumentClick)
     document.addEventListener('mousedown', this.onDocumentMouseDown)
     this.setupPosition()
@@ -213,9 +199,6 @@ export class Popover extends React.Component<IPopoverProps, IPopoverState> {
   }
 
   public componentWillUnmount() {
-    this.isUnmounted = true
-    this.floatingCleanUp?.()
-    this.floatingCleanUp = null
     document.removeEventListener('click', this.onDocumentClick)
     document.removeEventListener('mousedown', this.onDocumentMouseDown)
   }
@@ -304,7 +287,7 @@ export class Popover extends React.Component<IPopoverProps, IPopoverState> {
       isDialog,
     } = this.props
     const cn = classNames(
-      hasPopoverComponentDecoration(decoration) && 'popover-component',
+      decoration === PopoverDecoration.Balloon && 'popover-component',
       className,
       appearEffect && `appear-${appearEffect}`
     )
@@ -377,7 +360,7 @@ export class Popover extends React.Component<IPopoverProps, IPopoverState> {
         >
           {children}
         </div>
-        {hasPopoverTip(decoration) && (
+        {decoration === PopoverDecoration.Balloon && (
           <div
             className="popover-tip"
             style={{

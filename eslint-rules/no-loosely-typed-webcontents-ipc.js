@@ -1,17 +1,13 @@
 // @ts-check
 
 /**
- * @typedef {import('@typescript-eslint/utils').TSESLint.RuleModule<'useStronglyTypedWebContentsIPC', []>} RuleModule
+ * @typedef {import('eslint').Rule.RuleModule} RuleModule
  */
 
-/**
- * @param {import('@typescript-eslint/utils').TSESLint.RuleContext<'useStronglyTypedWebContentsIPC', []>} context
- * @param {import('@typescript-eslint/utils').TSESTree.CallExpression} node
- */
-function isLooselyTypedWebContentsCall(context, node) {
+function isLooselyTypesWebContentsCall(context, node) {
   const { callee } = node
 
-  if (callee.type !== 'MemberExpression') {
+  if (!['MemberExpression', 'OptionalMemberExpression'].includes(callee.type)) {
     return
   }
 
@@ -31,8 +27,8 @@ function isLooselyTypedWebContentsCall(context, node) {
 
   // *.webContents?.send
   if (
-    obj.type === 'MemberExpression' &&
-    obj.property.type === 'Identifier' &&
+    (obj.type === 'MemberExpression' ||
+      obj.type === 'OptionalMemberExpression') &&
     obj.property.name === 'webContents'
   ) {
     context.report({ node, messageId: 'useStronglyTypedWebContentsIPC' })
@@ -46,12 +42,10 @@ function isLooselyTypedWebContentsCall(context, node) {
 
 /** @type {RuleModule} */
 module.exports = {
-  defaultOptions: [],
   meta: {
-    type: 'problem',
-    schema: [],
     docs: {
       description: 'Do not use loosely typed webContents methods',
+      category: 'Best Practices',
     },
     // strings from https://github.com/Microsoft/tslint-microsoft-contrib/blob/b720cd9/src/insecureRandomRule.ts
     messages: {
@@ -61,7 +55,8 @@ module.exports = {
   },
   create(context) {
     return {
-      CallExpression: n => isLooselyTypedWebContentsCall(context, n),
+      OptionalCallExpression: n => isLooselyTypesWebContentsCall(context, n),
+      CallExpression: n => isLooselyTypesWebContentsCall(context, n),
     }
   },
 }

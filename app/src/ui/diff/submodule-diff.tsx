@@ -54,7 +54,7 @@ export class SubmoduleDiff extends React.Component<ISubmoduleDiffProps> {
         <div className="content">
           <div className="interstitial-header">
             <div className="text">
-              <h1>Submodule changes</h1>
+              <h1>子模块变更</h1>
             </div>
           </div>
           {this.renderSubmoduleInfo()}
@@ -84,7 +84,7 @@ export class SubmoduleDiff extends React.Component<ISubmoduleDiffProps> {
     return this.renderSubmoduleDiffItem(
       { octicon: octicons.info, className: 'info-icon' },
       <>
-        This is a submodule based on the repository{' '}
+        这是一个基于代码库的子模块。{' '}
         <LinkButton
           uri={`https://${repoIdentifier.hostname}/${repoIdentifier.owner}/${repoIdentifier.name}`}
         >
@@ -158,7 +158,7 @@ export class SubmoduleDiff extends React.Component<ISubmoduleDiffProps> {
 
     const changes =
       diff.status.untrackedChanges && diff.status.modifiedChanges
-        ? 'modified and untracked'
+        ? "修改过的和未跟踪的"
         : diff.status.untrackedChanges
         ? 'untracked'
         : 'modified'
@@ -196,9 +196,9 @@ export class SubmoduleDiff extends React.Component<ISubmoduleDiffProps> {
     return (
       <span>
         <SuggestedAction
-          title="Open this submodule on GitHub Desktop"
-          description="You can open this submodule on GitHub Desktop as a normal repository to manage and commit any changes in it."
-          buttonText={__DARWIN__ ? 'Open Repository' : 'Open repository'}
+          title="在 GitHub 桌面版中打开此子模块"
+          description="你可以将这个子模块在 GitHub Desktop 中作为普通代码库打开，以便管理并提交其中的任何更改。"
+          buttonText={__DARWIN__ ? 'Open Repository' : "打开存储库"}
           type="primary"
           onClick={this.onOpenSubmoduleClick}
         />

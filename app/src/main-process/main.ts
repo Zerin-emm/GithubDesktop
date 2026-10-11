@@ -4,8 +4,6 @@ import {
   app,
   Menu,
   BrowserWindow,
-  clipboard,
-  dialog,
   shell,
   session,
   systemPreferences,
@@ -17,11 +15,7 @@ import { AppWindow } from './app-window'
 import { buildDefaultMenu, getAllMenuItems } from './menu'
 import { shellNeedsPatching, updateEnvironmentForProcess } from '../lib/shell'
 import { parseAppURL } from '../lib/parse-app-url'
-import {
-  handleSquirrelEvent,
-  installWindowsCLI,
-  uninstallWindowsCLI,
-} from './squirrel-updater'
+import { installWindowsCLI, uninstallWindowsCLI } from './cli-installer'
 import { fatalError } from '../lib/fatal-error'
 
 import { log as writeLog } from './log'
@@ -36,7 +30,6 @@ import { showUncaughtException } from './show-uncaught-exception'
 import { buildContextMenu } from './menu/build-context-menu'
 import { OrderedWebRequest } from './ordered-webrequest'
 import { installAuthenticatedImageFilter } from './authenticated-image-filter'
-import { createAuthenticatedImageTokenResolver } from './authenticated-image-token-resolver'
 import { installAliveOriginFilter } from './alive-origin-filter'
 import { installSameOriginFilter } from './same-origin-filter'
 import * as ipcMain from './ipc-main'
@@ -118,10 +111,11 @@ if (__DARWIN__) {
   possibleProtocols.add('github-windows')
 }
 
-// On Windows, in order to get notifications properly working for dev builds,
-// we'll want to set the right App User Model ID from production builds.
-if (__WIN32__ && __DEV__) {
-  app.setAppUserModelId('com.squirrel.GitHubDesktop.GitHubDesktop')
+// On Windows, an explicit App User Model ID keeps taskbar grouping,
+// jump lists and notifications working without the Squirrel installer
+// that used to register one for us.
+if (__WIN32__) {
+  app.setAppUserModelId('com.github.GitHubClient')
 }
 
 app.on('window-all-closed', () => {
@@ -140,22 +134,7 @@ process.on('uncaughtException', (error: Error) => {
   handleUncaughtException(error)
 })
 
-let handlingSquirrelEvent = false
-if (__WIN32__ && process.argv.length > 1) {
-  const arg = process.argv[1]
-  const promise = handleSquirrelEvent(arg)
-
-  if (promise) {
-    handlingSquirrelEvent = true
-    promise
-      .catch(e => log.error(`Failed handling Squirrel event: ${arg}`, e))
-      .then(() => app.quit())
-  }
-}
-
-if (!handlingSquirrelEvent) {
-  handleCommandLineArguments(process.argv)
-}
+handleCommandLineArguments(process.argv)
 
 initializeDesktopNotifications()
 
@@ -171,33 +150,28 @@ function handleAppURL(url: string) {
 }
 
 let isDuplicateInstance = false
-// If we're handling a Squirrel event we don't want to enforce single instance.
-// We want to let the updated instance launch and do its work. It will then quit
-// once it's done.
-if (!handlingSquirrelEvent) {
-  const gotSingleInstanceLock = app.requestSingleInstanceLock()
-  isDuplicateInstance = !gotSingleInstanceLock
+const gotSingleInstanceLock = app.requestSingleInstanceLock()
+isDuplicateInstance = !gotSingleInstanceLock
 
-  app.on('second-instance', (event, args, workingDirectory) => {
-    // Someone tried to run a second instance, we should focus our window.
-    if (mainWindow) {
-      if (mainWindow.isMinimized()) {
-        mainWindow.restore()
-      }
-
-      if (!mainWindow.isVisible()) {
-        mainWindow.show()
-      }
-
-      mainWindow.focus()
+app.on('second-instance', (event, args, workingDirectory) => {
+  // Someone tried to run a second instance, we should focus our window.
+  if (mainWindow) {
+    if (mainWindow.isMinimized()) {
+      mainWindow.restore()
     }
 
-    handleCommandLineArguments(args)
-  })
+    if (!mainWindow.isVisible()) {
+      mainWindow.show()
+    }
 
-  if (isDuplicateInstance) {
-    app.quit()
+    mainWindow.focus()
   }
+
+  handleCommandLineArguments(args)
+})
+
+if (isDuplicateInstance) {
+  app.quit()
 }
 
 if (shellNeedsPatching(process)) {
@@ -265,7 +239,7 @@ async function handleCommandLineArguments(argv: string[]) {
         try {
           new URL(arg)
           return true
-        } catch {
+        } catch (e) {
           log.error(`Unable to parse argument as URL: ${arg}`)
         }
       }
@@ -327,7 +301,7 @@ if (process.env.GITHUB_DESKTOP_DISABLE_HARDWARE_ACCELERATION) {
 }
 
 app.on('ready', () => {
-  if (isDuplicateInstance || handlingSquirrelEvent) {
+  if (isDuplicateInstance) {
     return
   }
 
@@ -350,13 +324,7 @@ app.on('ready', () => {
 
   // Adds an authorization header for requests of avatars on GHES and private
   // repo assets
-  const imageTokenResolver = createAuthenticatedImageTokenResolver(
-    () => mainWindow?.webContents
-  )
-  const updateAccounts = installAuthenticatedImageFilter(
-    orderedWebRequest,
-    imageTokenResolver.resolveToken
-  )
+  const updateAccounts = installAuthenticatedImageFilter(orderedWebRequest)
 
   Menu.setApplicationMenu(
     buildDefaultMenu({
@@ -367,16 +335,7 @@ app.on('ready', () => {
     })
   )
 
-  ipcMain.on('update-accounts', (event, accounts) => {
-    if (event.sender !== mainWindow?.webContents) {
-      return
-    }
-    imageTokenResolver.updateAccounts(accounts)
-    updateAccounts(accounts)
-  })
-  ipcMain.on('resolved-image-token', (event, requestId, token) => {
-    imageTokenResolver.acceptResponse(event.sender, requestId, token)
-  })
+  ipcMain.on('update-accounts', (_, accounts) => updateAccounts(accounts))
 
   ipcMain.on('update-preferred-app-menu-item-labels', (_, labels) => {
     // The current application menu is mutable and we frequently
@@ -529,10 +488,6 @@ app.on('ready', () => {
     })
   })
 
-  ipcMain.handle('write-clipboard-text', async (_, text) =>
-    clipboard.writeText(text)
-  )
-
   ipcMain.handle('check-for-updates', async (_, url) =>
     mainWindow?.checkForUpdates(url)
   )
@@ -634,11 +589,6 @@ app.on('ready', () => {
   ipcMain.handle('get-app-path', async () => app.getAppPath())
 
   /**
-   * An event sent by the renderer asking for the executable path
-   */
-  ipcMain.handle('get-exec-path', async () => process.execPath)
-
-  /**
    * An event sent by the renderer asking for whether the app is running under
    * rosetta translation
    */
@@ -658,26 +608,6 @@ app.on('ready', () => {
   ipcMain.handle('show-item-in-folder', async (_, path) =>
     shell.showItemInFolder(path)
   )
-  ipcMain.handle('confirm-reveal-directory', async event => {
-    const window = BrowserWindow.fromWebContents(event.sender)
-    const options: Electron.MessageBoxOptions = {
-      type: 'warning',
-      title: 'Reveal Repository in Finder?',
-      message: 'This repository might be an application.',
-      detail:
-        'Opening it directly could run software. You can reveal and select it in Finder without opening it.',
-      buttons: ['Reveal in Finder', 'Cancel'],
-      defaultId: 1,
-      cancelId: 1,
-      noLink: true,
-    }
-    const result =
-      window === null
-        ? await dialog.showMessageBox(options)
-        : await dialog.showMessageBox(window, options)
-
-    return result.response === 0
-  })
 
   ipcMain.on('unsafe-open-directory', async (_, path) =>
     UNSAFE_openDirectory(path)

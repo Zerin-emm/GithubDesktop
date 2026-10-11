@@ -33,8 +33,6 @@ interface IUnreachableCommitsDialogProps {
   readonly onDismissed: () => void
 
   readonly accounts: ReadonlyArray<Account>
-
-  readonly preferAbsoluteDates: boolean
 }
 
 interface IUnreachableCommitsDialogState {
@@ -119,7 +117,6 @@ export class UnreachableCommitsDialog extends React.Component<
             onCommitsSelected={this.onCommitsSelected}
             accounts={this.props.accounts}
             isInformationalView={true}
-            preferAbsoluteDates={this.props.preferAbsoluteDates}
           />
         </div>
       </>
@@ -149,7 +146,7 @@ export class UnreachableCommitsDialog extends React.Component<
         {this.state.selectedTab === UnreachableCommitsTab.Unreachable
           ? 'not'
           : ''}{' '}
-        in the ancestry path of the most recent commit in your selection.{' '}
+        in the ancestry path of the 最近提交 in your selection.{' '}
         <LinkButton uri="https://github.com/desktop/desktop/blob/development/docs/learn-more/unreachable-commits.md">
           Learn more about unreachable commits.
         </LinkButton>
@@ -161,7 +158,7 @@ export class UnreachableCommitsDialog extends React.Component<
     return (
       <Dialog
         className="unreachable-commits"
-        title={__DARWIN__ ? 'Commit Reachability' : 'Commit reachability'}
+        title={__DARWIN__ ? 'Commit Reachability' : "提交可达性"}
         onSubmit={this.props.onDismissed}
         onDismissed={this.props.onDismissed}
       >

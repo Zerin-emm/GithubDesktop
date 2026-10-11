@@ -12,11 +12,21 @@ import { assertNever } from '../fatal-error'
 import * as GitPerf from '../../ui/lib/git-perf'
 import * as Path from 'path'
 import { isErrnoException } from '../errno-exception'
+import { merge } from '../merge'
 import { withTrampolineEnv } from '../trampoline/trampoline-environment'
+import { createTailStream } from './create-tail-stream'
+import { createTerminalStream } from '../create-terminal-stream'
 import { kStringMaxLength } from 'buffer'
-import { withHooksEnv } from '../hooks/with-hooks-env'
-import { coerceToString } from './coerce-to-string'
-import { pushTerminalChunk } from './push-terminal-chunk'
+
+export const coerceToString = (
+  value: string | Buffer,
+  encoding: BufferEncoding = 'utf8'
+) => (Buffer.isBuffer(value) ? value.toString(encoding) : value)
+
+export const coerceToBuffer = (
+  value: string | Buffer,
+  encoding: BufferEncoding = 'utf8'
+) => (Buffer.isBuffer(value) ? value : Buffer.from(value, encoding))
 
 export const isMaxBufferExceededError = (
   error: unknown
@@ -27,43 +37,12 @@ export const isMaxBufferExceededError = (
   )
 }
 
-export type TerminalOutput = string | Buffer | Buffer[]
-
-export type TerminalOutputListener = (cb: (chunk: TerminalOutput) => void) => {
-  unsubscribe: () => void
-}
-
-export type TerminalOutputCallback = (subscribe: TerminalOutputListener) => void
-
-export type HookProgress = {
-  readonly hookName: string
-} & (
-  | {
-      readonly status: 'started'
-      readonly abort: () => void
-    }
-  | {
-      readonly status: 'finished' | 'failed'
-    }
-)
-
-export type HookCallbackOptions = {
-  readonly onHookProgress?: (progress: HookProgress) => void
-  readonly onHookFailure?: (
-    hookName: string,
-    terminalOutput: TerminalOutput
-  ) => Promise<'abort' | 'ignore'>
-  readonly onTerminalOutputAvailable?: TerminalOutputCallback
-}
-
 /**
  * An extension of the execution options in dugite that
  * allows us to piggy-back our own configuration options in the
  * same object.
  */
-export interface IGitExecutionOptions
-  extends HookCallbackOptions,
-    DugiteExecutionOptions {
+export interface IGitExecutionOptions extends DugiteExecutionOptions {
   /**
    * The exit codes which indicate success to the
    * caller. Unexpected exit codes will be logged and an
@@ -85,8 +64,6 @@ export interface IGitExecutionOptions
    * This affects error handling and UI such as credential prompts.
    */
   readonly isBackgroundTask?: boolean
-
-  readonly interceptHooks?: string[]
 }
 
 /**
@@ -243,146 +220,122 @@ export async function git(
   // Note: The output is capped at a maximum of 256kb and the sole intent of
   // this property is to provide "terminal-like" output to the user when a Git
   // command fails.
-  const terminalChunks: string[] = []
-  const terminalCapacity = 256 * 1024
+  let terminalOutput = ''
 
   // Keep at most 256kb of combined stderr and stdout output. This is used
   // to provide more context in error messages.
   opts.processCallback = process => {
-    options?.onTerminalOutputAvailable?.(function (cb) {
-      terminalChunks.forEach(chunk => cb(chunk))
+    const terminalStream = createTerminalStream()
+    const tailStream = createTailStream(256 * 1024, { encoding: 'utf8' })
 
-      process.stdout?.on('data', cb)
-      process.stderr?.on('data', cb)
+    terminalStream
+      .pipe(tailStream)
+      .on('data', (data: string) => (terminalOutput = data))
+      .on('error', e => log.error(`Terminal output error`, e))
 
-      return {
-        unsubscribe: () => {
-          process.stdout?.off('data', cb)
-          process.stderr?.off('data', cb)
-        },
-      }
-    })
-
-    const push = (chunk: Buffer | string) => {
-      pushTerminalChunk(terminalChunks, terminalCapacity, chunk)
-    }
-
-    process.stdout?.on('data', push)
-    process.stderr?.on('data', push)
-
+    process.stdout?.pipe(terminalStream, { end: false })
+    process.stderr?.pipe(terminalStream, { end: false })
+    process.on('close', () => terminalStream.end())
     options?.processCallback?.(process)
   }
 
-  return withHooksEnv(
-    hooksEnv =>
-      withTrampolineEnv(
-        async env => {
-          const commandName = `${name}: git ${args.join(' ')}`
+  return withTrampolineEnv(
+    async env => {
+      const combinedEnv = merge(opts.env, env)
 
-          const result = await GitPerf.measure(commandName, () =>
-            exec(args, path, {
-              ...opts,
-              env: {
-                // Explicitly set TERM to 'dumb' so that if Desktop was launched
-                // from a terminal or if the system environment variables
-                // have TERM set Git won't consider us as a smart terminal.
-                // See https://github.com/git/git/blob/a7312d1a2/editor.c#L11-L15
-                TERM: 'dumb',
-                ...opts.env,
-                ...hooksEnv,
-                ...env,
-              },
-            })
-          ).catch(err => {
-            // If this is an exception thrown by Node.js (as opposed to
-            // dugite) let's keep the salient details but include the name of
-            // the operation.
-            if (isErrnoException(err)) {
-              throw new Error(`Failed to execute ${name}: ${err.code}`)
-            }
+      // Explicitly set TERM to 'dumb' so that if Desktop was launched
+      // from a terminal or if the system environment variables
+      // have TERM set Git won't consider us as a smart terminal.
+      // See https://github.com/git/git/blob/a7312d1a2/editor.c#L11-L15
+      opts.env = { TERM: 'dumb', ...combinedEnv }
 
-            if (isMaxBufferExceededError(err)) {
-              throw new ExecError(
-                `${err.message} for ${name}`,
-                err.stdout,
-                err.stderr,
-                // Dugite stores the original Node error in the cause property, by
-                // passing that along we ensure that all we're doing here is
-                // changing the error message (and capping the stack but that's
-                // okay since we know exactly where this error is coming from).
-                // The null coalescing here is a safety net in case dugite's
-                // behavior changes from underneath us.
-                err.cause ?? err
-              )
-            }
+      const commandName = `${name}: git ${args.join(' ')}`
 
-            throw err
-          })
+      const result = await GitPerf.measure(commandName, () =>
+        exec(args, path, opts)
+      ).catch(err => {
+        // If this is an exception thrown by Node.js (as opposed to
+        // dugite) let's keep the salient details but include the name of
+        // the operation.
+        if (isErrnoException(err)) {
+          throw new Error(`Failed to execute ${name}: ${err.code}`)
+        }
 
-          const exitCode = result.exitCode
-
-          let gitError: DugiteError | null = null
-          const acceptableExitCode = opts.successExitCodes
-            ? opts.successExitCodes.has(exitCode)
-            : false
-          if (!acceptableExitCode) {
-            gitError = parseError(coerceToString(result.stderr))
-            if (gitError === null) {
-              gitError = parseError(coerceToString(result.stdout))
-            }
-          }
-
-          const gitErrorDescription =
-            gitError !== null
-              ? getDescriptionForError(gitError, coerceToString(result.stderr))
-              : null
-          const gitResult = {
-            ...result,
-            gitError,
-            gitErrorDescription,
-            path,
-          }
-
-          let acceptableError = true
-          if (gitError !== null && opts.expectedErrors) {
-            acceptableError = opts.expectedErrors.has(gitError)
-          }
-
-          if ((gitError !== null && acceptableError) || acceptableExitCode) {
-            return gitResult
-          }
-
-          // The caller should either handle this error, or expect that exit code.
-          const errorMessage = new Array<string>()
-          errorMessage.push(
-            `\`git ${args.join(
-              ' '
-            )}\` exited with an unexpected code: ${exitCode}.`
+        if (isMaxBufferExceededError(err)) {
+          throw new ExecError(
+            `${err.message} for ${name}`,
+            err.stdout,
+            err.stderr,
+            // Dugite stores the original Node error in the cause property, by
+            // passing that along we ensure that all we're doing here is
+            // changing the error message (and capping the stack but that's
+            // okay since we know exactly where this error is coming from).
+            // The null coalescing here is a safety net in case dugite's
+            // behavior changes from underneath us.
+            err.cause ?? err
           )
+        }
 
-          const terminalOutput = terminalChunks.join('')
+        throw err
+      })
 
-          if (terminalOutput.length > 0) {
-            // Leave even less of the combined output in the log
-            errorMessage.push(terminalOutput.slice(-1024))
-          }
+      const exitCode = result.exitCode
 
-          if (gitError !== null) {
-            errorMessage.push(
-              `(The error was parsed as ${gitError}: ${gitErrorDescription})`
-            )
-          }
+      let gitError: DugiteError | null = null
+      const acceptableExitCode = opts.successExitCodes
+        ? opts.successExitCodes.has(exitCode)
+        : false
+      if (!acceptableExitCode) {
+        gitError = parseError(coerceToString(result.stderr))
+        if (gitError === null) {
+          gitError = parseError(coerceToString(result.stdout))
+        }
+      }
 
-          log.error(errorMessage.join('\n'))
-
-          throw new GitError(gitResult, args, terminalOutput)
-        },
+      const gitErrorDescription =
+        gitError !== null
+          ? getDescriptionForError(gitError, coerceToString(result.stderr))
+          : null
+      const gitResult = {
+        ...result,
+        gitError,
+        gitErrorDescription,
         path,
-        options?.isBackgroundTask ?? false,
-        hooksEnv
-      ),
+      }
+
+      let acceptableError = true
+      if (gitError !== null && opts.expectedErrors) {
+        acceptableError = opts.expectedErrors.has(gitError)
+      }
+
+      if ((gitError !== null && acceptableError) || acceptableExitCode) {
+        return gitResult
+      }
+
+      // The caller should either handle this error, or expect that exit code.
+      const errorMessage = new Array<string>()
+      errorMessage.push(
+        `\`git ${args.join(' ')}\` exited with an unexpected code: ${exitCode}.`
+      )
+
+      if (terminalOutput.length > 0) {
+        // Leave even less of the combined output in the log
+        errorMessage.push(terminalOutput.slice(-1024))
+      }
+
+      if (gitError !== null) {
+        errorMessage.push(
+          `(The error was parsed as ${gitError}: ${gitErrorDescription})`
+        )
+      }
+
+      log.error(errorMessage.join('\n'))
+
+      throw new GitError(gitResult, args, terminalOutput)
+    },
     path,
-    options
+    options?.isBackgroundTask ?? false,
+    options?.env
   )
 }
 
@@ -452,15 +405,15 @@ export function getDescriptionForError(
     const menuHint = __DARWIN__
       ? 'GitHub Desktop > Settings.'
       : 'File > Options.'
-    return `Authentication failed. Some common reasons include:
+    return `身份验证失败。一些常见原因包括：
 
-- You are not logged in to your account: see ${menuHint}
-- You may need to log out and log back in to refresh your token.
-- You do not have permission to access this repository.
-- The repository is archived on GitHub. Check the repository settings to confirm you are still permitted to push commits.
-- If you use SSH authentication, check that your key is added to the ssh-agent and associated with your account.
-- If you use SSH authentication, ensure the host key verification passes for your repository hosting service.
-- If you used username / password authentication, you might need to use a Personal Access Token instead of your account password. Check the documentation of your repository hosting service.`
+- 您尚未登录到您的帐户：请参阅 ${menuHint}
+- 您可能需要注销并重新登录才能刷新令牌。
+- 您没有访问此存储库的权限。
+- 存储库存档在 GitHub 上。检查存储库设置以确认您仍可以推送提交。
+- 如果您使用 SSH 身份验证，请检查您的密钥是否已添加到 ssh 代理并与您的帐户关联。
+- 如果使用 SSH 身份验证，请确保存储库托管服务的主机密钥验证通过。
+- 如果使用了用户名/密码身份验证，则可能需要使用个人访问令牌而不是帐户密码。请查看存储库托管服务的文档。`
   }
 
   switch (error) {
@@ -472,94 +425,94 @@ export function getDescriptionForError(
 
       return `Unsupported value '${errorInfo.value}' for git config key '${errorInfo.key}'`
     case DugiteError.SSHKeyAuditUnverified:
-      return 'The SSH key is unverified.'
+      return "SSH密钥未验证."
     case DugiteError.RemoteDisconnection:
-      return 'The remote disconnected. Check your Internet connection and try again.'
+      return "远程已断开连接。请检查您的Internet连接，然后重试."
     case DugiteError.HostDown:
-      return 'The host is down. Check your Internet connection and try again.'
+      return "主机已关闭。请检查您的Internet连接，然后重试."
     case DugiteError.RebaseConflicts:
-      return 'We found some conflicts while trying to rebase. Please resolve the conflicts before continuing.'
+      return "我们在尝试重新变基时发现了一些冲突。请在继续之前解决冲突."
     case DugiteError.MergeConflicts:
-      return 'We found some conflicts while trying to merge. Please resolve the conflicts and commit the changes.'
+      return "尝试合并时发现一些冲突。请解决冲突并提交更改."
     case DugiteError.HTTPSRepositoryNotFound:
     case DugiteError.SSHRepositoryNotFound:
-      return 'The repository does not seem to exist anymore. You may not have access, or it may have been deleted or renamed.'
+      return "存储库似乎不再存在。您可能没有访问权限，或者它可能已被删除或重命名."
     case DugiteError.PushNotFastForward:
-      return 'The repository has been updated since you last pulled. Try pulling before pushing.'
+      return "自上次提取后，存储库已更新。在推送之前试着拉取."
     case DugiteError.BranchDeletionFailed:
-      return 'Could not delete the branch. It was probably already deleted.'
+      return "无法删除分支。它可能已被删除."
     case DugiteError.DefaultBranchDeletionFailed:
-      return `The branch is the repository's default branch and cannot be deleted.`
+      return "该分支是仓库的默认分支，无法删除."
     case DugiteError.RevertConflicts:
-      return 'To finish reverting, please merge and commit the changes.'
+      return "要完成还原，请合并并提交更改."
     case DugiteError.EmptyRebasePatch:
-      return 'There aren’t any changes left to apply.'
+      return "没有要应用的任何更改."
     case DugiteError.NoMatchingRemoteBranch:
-      return 'There aren’t any remote branches that match the current branch.'
+      return "没有任何与当前分支匹配的远程分支."
     case DugiteError.NothingToCommit:
-      return 'There are no changes to commit.'
+      return "没有要提交的更改."
     case DugiteError.NoSubmoduleMapping:
-      return 'A submodule was removed from .gitmodules, but the folder still exists in the repository. Delete the folder, commit the change, then try again.'
+      return "已从 .gitmodules 中删除子模块,但该文件夹仍存在于仓库中。请删除该文件夹,提交更改后重试。"
     case DugiteError.SubmoduleRepositoryDoesNotExist:
-      return 'A submodule points to a location which does not exist.'
+      return "子模块指向不存在的位置."
     case DugiteError.InvalidSubmoduleSHA:
-      return 'A submodule points to a commit which does not exist.'
+      return "子模块指向不存在的提交."
     case DugiteError.LocalPermissionDenied:
-      return 'Permission denied.'
+      return "权限被拒绝。"
     case DugiteError.InvalidMerge:
-      return 'This is not something we can merge.'
+      return "这不是我们可以合并的东西."
     case DugiteError.InvalidRebase:
-      return 'This is not something we can rebase.'
+      return "这不是我们可以调整的变基."
     case DugiteError.NonFastForwardMergeIntoEmptyHead:
-      return 'The merge you attempted is not a fast-forward, so it cannot be performed on an empty branch.'
+      return "您尝试的合并不是快进，因此无法在空分支上执行."
     case DugiteError.PatchDoesNotApply:
-      return 'The requested changes conflict with one or more files in the repository.'
+      return "请求的更改与仓库中的一个或多个文件冲突."
     case DugiteError.BranchAlreadyExists:
-      return 'A branch with that name already exists.'
+      return "具有该名称的分支已存在."
     case DugiteError.BadRevision:
-      return 'Bad revision.'
+      return "错误的修订."
     case DugiteError.NotAGitRepository:
-      return 'This is not a git repository.'
+      return "这不是git仓库."
     case DugiteError.ProtectedBranchForcePush:
-      return 'This branch is protected from force-push operations.'
+      return "此分支受到强制推送操作的保护."
     case DugiteError.ProtectedBranchRequiresReview:
-      return 'This branch is protected and any changes requires an approved review. Open a pull request with changes targeting this branch instead.'
+      return "此分支受到保护，任何更改都需要经过批准的审查。打开一个pull请求，更改的目标改为此分支."
     case DugiteError.PushWithFileSizeExceedingLimit:
-      return "The push operation includes a file which exceeds GitHub's file size restriction of 100MB. Please remove the file from history and try again."
+      return "推送操作包括一个超过GitHub的100MB文件大小限制的文件。请从历史记录中删除该文件，然后重试."
     case DugiteError.HexBranchNameRejected:
-      return 'The branch name cannot be a 40-character string of hexadecimal characters, as this is the format that Git uses for representing objects.'
+      return "分支名称不能是由十六进制字符组成的40个字符的字符串，因为这是Git用于表示对象的格式."
     case DugiteError.ForcePushRejected:
-      return 'The force push has been rejected for the current branch.'
+      return "当前分支的强制推送已被拒绝."
     case DugiteError.InvalidRefLength:
-      return 'A ref cannot be longer than 255 characters.'
+      return "引用长度不能超过255个字符."
     case DugiteError.CannotMergeUnrelatedHistories:
-      return 'Unable to merge unrelated histories in this repository.'
+      return "无法在此仓库中合并不相关的历史记录."
     case DugiteError.PushWithPrivateEmail:
       return 'Cannot push these commits as they contain an email address marked as private on GitHub. To push anyway, visit https://github.com/settings/emails, uncheck "Keep my email address private", then switch back to GitHub Desktop to push your commits. You can then enable the setting again.'
     case DugiteError.LFSAttributeDoesNotMatch:
-      return 'Git LFS attribute found in global Git configuration does not match expected value.'
+      return "在全局Git配置中找到的Git LFS属性与预期值不匹配."
     case DugiteError.ProtectedBranchDeleteRejected:
-      return 'This branch cannot be deleted from the remote repository because it is marked as protected.'
+      return "无法从远程仓库中删除此分支，因为它被标记为受保护."
     case DugiteError.ProtectedBranchRequiredStatus:
-      return 'The push was rejected by the remote server because a required status check has not been satisfied.'
+      return "推送被远程服务器拒绝，因为未满足所需的状态检查."
     case DugiteError.BranchRenameFailed:
-      return 'The branch could not be renamed.'
+      return "无法重命名分支."
     case DugiteError.PathDoesNotExist:
-      return 'The path does not exist on disk.'
+      return "磁盘上不存在路径."
     case DugiteError.InvalidObjectName:
-      return 'The object was not found in the Git repository.'
+      return "在Git仓库中找不到该对象."
     case DugiteError.OutsideRepository:
-      return 'This path is not a valid path inside the repository.'
+      return "此路径不是仓库中的有效路径."
     case DugiteError.LockFileAlreadyExists:
-      return 'A lock file already exists in the repository, which blocks this operation from completing.'
+      return "仓库中已存在锁定文件，这将阻止此操作完成."
     case DugiteError.NoMergeToAbort:
-      return 'There is no merge in progress, so there is nothing to abort.'
+      return "没有正在进行的合并，因此没有要中止的内容."
     case DugiteError.NoExistingRemoteBranch:
-      return 'The remote branch does not exist.'
+      return "远程分支不存在."
     case DugiteError.LocalChangesOverwritten:
-      return 'Unable to switch branches as there are working directory changes which would be overwritten. Please commit or stash your changes.'
+      return "无法切换分支，因为存在将被覆盖的工作目录更改。请提交或隐藏您的更改."
     case DugiteError.UnresolvedConflicts:
-      return 'There are unresolved conflicts in the working directory.'
+      return "工作目录中存在未解决的冲突."
     case DugiteError.ConfigLockFileAlreadyExists:
       // Added in dugite 1.88.0 (https://github.com/desktop/dugite/pull/386)
       // in support of https://github.com/desktop/desktop/issues/8675 but we're
@@ -570,7 +523,7 @@ export function getDescriptionForError(
     case DugiteError.RemoteAlreadyExists:
       return null
     case DugiteError.TagAlreadyExists:
-      return 'A tag with that name already exists'
+      return "具有该名称的标记已存在"
     case DugiteError.MergeWithLocalChanges:
     case DugiteError.RebaseWithLocalChanges:
     case DugiteError.GPGFailedToSignData:

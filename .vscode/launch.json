@@ -5,18 +5,17 @@
       "type": "node",
       "request": "launch",
       "name": "Debug current test file",
-      "cwd": "${workspaceFolder}",
       "args": [
         "--disable-warning=ExperimentalWarning",
         "--experimental-test-module-mocks",
         "--import",
         "tsx",
         "--import",
-        "./app/test/globals.mts",
+        "${workspaceFolder}/app/test/globals.mts",
         "--test",
         "${relativeFile}"
       ],
-      "envFile": ".test.env",
+      "envFile": "${workspaceFolder}/.test.env",
       "console": "integratedTerminal",
       "internalConsoleOptions": "neverOpen"
     }

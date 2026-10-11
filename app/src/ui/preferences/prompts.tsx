@@ -4,6 +4,7 @@ import { DialogContent } from '../dialog'
 import { Checkbox, CheckboxValue } from '../lib/checkbox'
 import { RadioGroup } from '../lib/radio-group'
 import { assertNever } from '../../lib/fatal-error'
+import { enableFilteredChangesList } from '../../lib/feature-flag'
 
 interface IPromptsPreferencesProps {
   readonly confirmRepositoryRemoval: boolean
@@ -14,8 +15,6 @@ interface IPromptsPreferencesProps {
   readonly confirmForcePush: boolean
   readonly confirmUndoCommit: boolean
   readonly askForConfirmationOnCommitFilteredChanges: boolean
-  readonly confirmCommitMessageOverride: boolean
-  readonly confirmWorktreeRemoval: boolean
   readonly showCommitLengthWarning: boolean
   readonly uncommittedChangesStrategy: UncommittedChangesStrategy
   readonly onConfirmDiscardChangesChanged: (checked: boolean) => void
@@ -30,8 +29,6 @@ interface IPromptsPreferencesProps {
     value: UncommittedChangesStrategy
   ) => void
   readonly onAskForConfirmationOnCommitFilteredChanges: (value: boolean) => void
-  readonly onConfirmCommitMessageOverrideChanged: (checked: boolean) => void
-  readonly onConfirmWorktreeRemovalChanged: (checked: boolean) => void
 }
 
 interface IPromptsPreferencesState {
@@ -43,8 +40,6 @@ interface IPromptsPreferencesState {
   readonly confirmForcePush: boolean
   readonly confirmUndoCommit: boolean
   readonly askForConfirmationOnCommitFilteredChanges: boolean
-  readonly confirmCommitMessageOverride: boolean
-  readonly confirmWorktreeRemoval: boolean
   readonly uncommittedChangesStrategy: UncommittedChangesStrategy
 }
 
@@ -67,8 +62,6 @@ export class Prompts extends React.Component<
       uncommittedChangesStrategy: this.props.uncommittedChangesStrategy,
       askForConfirmationOnCommitFilteredChanges:
         this.props.askForConfirmationOnCommitFilteredChanges,
-      confirmCommitMessageOverride: this.props.confirmCommitMessageOverride,
-      confirmWorktreeRemoval: this.props.confirmWorktreeRemoval,
     }
   }
 
@@ -135,24 +128,6 @@ export class Prompts extends React.Component<
     this.props.onAskForConfirmationOnCommitFilteredChanges(value)
   }
 
-  private onConfirmCommitMessageOverrideChanged = (
-    event: React.FormEvent<HTMLInputElement>
-  ) => {
-    const value = event.currentTarget.checked
-
-    this.setState({ confirmCommitMessageOverride: value })
-    this.props.onConfirmCommitMessageOverrideChanged(value)
-  }
-
-  private onConfirmWorktreeRemovalChanged = (
-    event: React.FormEvent<HTMLInputElement>
-  ) => {
-    const value = event.currentTarget.checked
-
-    this.setState({ confirmWorktreeRemoval: value })
-    this.props.onConfirmWorktreeRemovalChanged(value)
-  }
-
   private onConfirmRepositoryRemovalChanged = (
     event: React.FormEvent<HTMLInputElement>
   ) => {
@@ -178,11 +153,11 @@ export class Prompts extends React.Component<
   private renderSwitchBranchOptionLabel = (key: UncommittedChangesStrategy) => {
     switch (key) {
       case UncommittedChangesStrategy.AskForConfirmation:
-        return 'Ask me where I want the changes to go'
+        return "询问我要更改的位置"
       case UncommittedChangesStrategy.MoveToNewBranch:
-        return 'Always bring my changes to my new branch'
+        return "始终将我的更改带到我的新分支"
       case UncommittedChangesStrategy.StashOnCurrentBranch:
-        return 'Always stash and leave my changes on the current branch'
+        return "始终将更改保存并保留在当前分支上"
       default:
         return assertNever(key, `Unknown uncommitted changes strategy: ${key}`)
     }
@@ -202,7 +177,7 @@ export class Prompts extends React.Component<
     return (
       <div className="advanced-section">
         <h2 id="switch-branch-heading">
-          If I have changes and I switch branches...
+          如果我更改了内容并切换分支…
         </h2>
 
         <RadioGroup<UncommittedChangesStrategy>
@@ -217,9 +192,13 @@ export class Prompts extends React.Component<
   }
 
   private renderCommittingFilteredChangesPrompt = () => {
+    if (!enableFilteredChangesList()) {
+      return
+    }
+
     return (
       <Checkbox
-        label="Committing changes hidden by filter"
+        label="提交被筛选隐藏的更改"
         value={
           this.state.askForConfirmationOnCommitFilteredChanges
             ? CheckboxValue.On
@@ -235,11 +214,11 @@ export class Prompts extends React.Component<
       <DialogContent>
         <div className="advanced-section">
           <h2 id="show-confirm-dialog-heading">
-            Show a confirmation dialog before...
+            在以下操作前显示确认对话框…
           </h2>
           <div role="group" aria-labelledby="show-confirm-dialog-heading">
             <Checkbox
-              label="Removing repositories"
+              label="移除仓库"
               value={
                 this.state.confirmRepositoryRemoval
                   ? CheckboxValue.On
@@ -248,7 +227,7 @@ export class Prompts extends React.Component<
               onChange={this.onConfirmRepositoryRemovalChanged}
             />
             <Checkbox
-              label="Discarding changes"
+              label="放弃更改"
               value={
                 this.state.confirmDiscardChanges
                   ? CheckboxValue.On
@@ -257,7 +236,7 @@ export class Prompts extends React.Component<
               onChange={this.onConfirmDiscardChangesChanged}
             />
             <Checkbox
-              label="Discarding changes permanently"
+              label="永久放弃更改"
               value={
                 this.state.confirmDiscardChangesPermanently
                   ? CheckboxValue.On
@@ -266,7 +245,7 @@ export class Prompts extends React.Component<
               onChange={this.onConfirmDiscardChangesPermanentlyChanged}
             />
             <Checkbox
-              label="Discarding stash"
+              label="丢弃贮藏"
               value={
                 this.state.confirmDiscardStash
                   ? CheckboxValue.On
@@ -275,7 +254,7 @@ export class Prompts extends React.Component<
               onChange={this.onConfirmDiscardStashChanged}
             />
             <Checkbox
-              label="Checking out a commit"
+              label="检出提交"
               value={
                 this.state.confirmCheckoutCommit
                   ? CheckboxValue.On
@@ -284,7 +263,7 @@ export class Prompts extends React.Component<
               onChange={this.onConfirmCheckoutCommitChanged}
             />
             <Checkbox
-              label="Force pushing"
+              label="强制推送"
               value={
                 this.state.confirmForcePush
                   ? CheckboxValue.On
@@ -293,7 +272,7 @@ export class Prompts extends React.Component<
               onChange={this.onConfirmForcePushChanged}
             />
             <Checkbox
-              label="Undo commit"
+              label="撤销提交"
               value={
                 this.state.confirmUndoCommit
                   ? CheckboxValue.On
@@ -301,32 +280,14 @@ export class Prompts extends React.Component<
               }
               onChange={this.onConfirmUndoCommitChanged}
             />
-            <Checkbox
-              label="Overriding commit message with generated message"
-              value={
-                this.state.confirmCommitMessageOverride
-                  ? CheckboxValue.On
-                  : CheckboxValue.Off
-              }
-              onChange={this.onConfirmCommitMessageOverrideChanged}
-            />
-            <Checkbox
-              label="Removing worktrees"
-              value={
-                this.state.confirmWorktreeRemoval
-                  ? CheckboxValue.On
-                  : CheckboxValue.Off
-              }
-              onChange={this.onConfirmWorktreeRemovalChanged}
-            />
             {this.renderCommittingFilteredChangesPrompt()}
           </div>
         </div>
         {this.renderSwitchBranchOptions()}
         <div className="advanced-section">
-          <h2>Commit Length</h2>
+          <h2>提交长度</h2>
           <Checkbox
-            label="Show commit length warning"
+            label="显示提交长度警告"
             value={
               this.props.showCommitLengthWarning
                 ? CheckboxValue.On

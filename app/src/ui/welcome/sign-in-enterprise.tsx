@@ -31,7 +31,7 @@ export class SignInEnterprise extends React.Component<
         <h1 className="welcome-title">Sign in to your GitHub Enterprise</h1>
 
         <SignIn signInState={state} dispatcher={this.props.dispatcher}>
-          <Button onClick={this.cancel}>Cancel</Button>
+          <Button onClick={this.cancel}>取消</Button>
         </SignIn>
       </section>
     )

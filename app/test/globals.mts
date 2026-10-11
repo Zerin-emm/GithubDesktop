@@ -42,14 +42,7 @@ Object.assign(globalThis, {
 
 mock.module('electron', {
   namedExports: {
-    shell: {
-      // Consumed through `app-shell`'s `openPath`, which binds this eagerly at
-      // import time, so it has to exist here for tests to be able to mock it.
-      openPath: async () => '',
-    },
-    ipcRenderer: {
-      invoke: mock.fn(async () => {}),
-      on: mock.fn(x => {}),
-    },
+    shell: {},
+    ipcRenderer: { on: mock.fn(x => {}) },
   },
 })

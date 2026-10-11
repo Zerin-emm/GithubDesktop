@@ -56,7 +56,7 @@ export class CreateTag extends React.Component<
     return (
       <Dialog
         id="create-tag"
-        title={__DARWIN__ ? 'Create a Tag' : 'Create a tag'}
+        title={__DARWIN__ ? 'Create a Tag' : "创建标签"}
         onSubmit={this.createTag}
         onDismissed={this.props.onDismissed}
         loading={this.state.isCreatingTag}
@@ -66,7 +66,7 @@ export class CreateTag extends React.Component<
 
         <DialogContent>
           <RefNameTextBox
-            label="Name"
+            label="名称"
             initialValue={this.props.initialName}
             onValueChange={this.updateTagName}
           />
@@ -76,7 +76,7 @@ export class CreateTag extends React.Component<
 
         <DialogFooter>
           <OkCancelButtonGroup
-            okButtonText={__DARWIN__ ? 'Create Tag' : 'Create tag'}
+            okButtonText={__DARWIN__ ? 'Create Tag' : "创建标签"}
             okButtonDisabled={disabled}
           />
         </DialogFooter>

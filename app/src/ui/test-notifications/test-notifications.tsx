@@ -121,11 +121,9 @@ class TestNotificationItemRowContent extends React.Component<{
   readonly leftAccessory?: JSX.Element
   readonly html_url?: string
   readonly dispatcher: Dispatcher
-  readonly linkButtonDescription: string
 }> {
   public render() {
-    const { leftAccessory, html_url, children, linkButtonDescription } =
-      this.props
+    const { leftAccessory, html_url, children } = this.props
 
     return (
       <div className="row-content">
@@ -133,17 +131,24 @@ class TestNotificationItemRowContent extends React.Component<{
         <div className="main-content">{children}</div>
         {html_url && (
           <div className="right-accessory">
-            <LinkButton
-              uri={html_url}
-              title={linkButtonDescription}
-              ariaLabel={linkButtonDescription}
-            >
+            <Button onClick={this.onExternalLinkClick} role="link">
               <Octicon symbol={octicons.linkExternal} />
-            </LinkButton>
+            </Button>
           </div>
         )}
       </div>
     )
+  }
+
+  private onExternalLinkClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    const { dispatcher, html_url } = this.props
+
+    if (html_url === undefined) {
+      return
+    }
+
+    e.stopPropagation()
+    dispatcher.openInBrowser(html_url)
   }
 }
 
@@ -199,11 +204,11 @@ export class TestNotifications extends React.Component<
       return (
         <>
           {' '}
-          You need to{' '}
+          你需要{' '}
           <LinkButton onClick={this.onGrantNotificationPermission}>
-            grant permission
+            授予权限
           </LinkButton>{' '}
-          to display these notifications from GitHub Desktop.
+          才能显示来自 GitHub Desktop 的通知。
         </>
       )
     }
@@ -217,10 +222,9 @@ export class TestNotifications extends React.Component<
     if (warnNotificationsDenied) {
       return (
         <>
-          <span className="warning-icon">⚠️</span> GitHub Desktop has no
-          permission to display notifications. Please, enable them in the{' '}
+          <span className="warning-icon">⚠️</span> GitHub Desktop 无权显示通知。请在{' '}
           <LinkButton uri={notificationSettingsURL}>
-            Notifications Settings
+            通知设置
           </LinkButton>
           .
         </>
@@ -233,9 +237,9 @@ export class TestNotifications extends React.Component<
 
     return (
       <>
-        Make sure notifications are {verb} for GitHub Desktop in the{' '}
+        请确保 ⚠(分句拼接,语序存疑) {verb} 已针对 GitHub Desktop 在 ⚠{' '}
         <LinkButton uri={notificationSettingsURL}>
-          Notifications Settings
+          通知设置
         </LinkButton>
         .
       </>
@@ -652,7 +656,6 @@ export class TestNotifications extends React.Component<
       <TestNotificationItemRowContent
         dispatcher={this.props.dispatcher}
         html_url={comment.html_url}
-        linkButtonDescription={`Open in browser: ${comment.body}`}
         leftAccessory={this.renderReviewStateIcon('COMMENTED')}
       >
         {comment.body}
@@ -669,7 +672,6 @@ export class TestNotifications extends React.Component<
       <TestNotificationItemRowContent
         dispatcher={this.props.dispatcher}
         html_url={review.html_url}
-        linkButtonDescription={`Open in browser: ${review.body}`}
         leftAccessory={this.renderReviewStateIcon(review.state)}
       >
         {review.body || <i>Review without body</i>}
@@ -700,7 +702,6 @@ export class TestNotifications extends React.Component<
       <TestNotificationItemRowContent
         dispatcher={this.props.dispatcher}
         html_url={htmlURL}
-        linkButtonDescription={`Open pull request #${pullRequest.pullRequestNumber} in browser`}
         leftAccessory={this.renderPullRequestStateIcon(pullRequest)}
       >
         <b>
@@ -732,7 +733,7 @@ export class TestNotifications extends React.Component<
     return (
       <Dialog
         id="test-notifications"
-        title="Test Notifications"
+        title="测试通知"
         onSubmit={this.props.onDismissed}
         onDismissed={this.props.onDismissed}
       >
@@ -742,11 +743,11 @@ export class TestNotifications extends React.Component<
         </DialogContent>
         <DialogFooter>
           <OkCancelButtonGroup
-            okButtonText="Close"
+            okButtonText="关闭"
             okButtonDisabled={false}
             cancelButtonDisabled={false}
             cancelButtonVisible={this.state.selectedFlow !== null}
-            cancelButtonText="Back"
+            cancelButtonText="返回"
             onCancelButtonClick={this.onBack}
           />
         </DialogFooter>

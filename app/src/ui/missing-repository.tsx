@@ -37,18 +37,15 @@ export class MissingRepository extends React.Component<
     const { unsafePath } = this.state
     const { repository } = this.props
 
-    try {
-      if (unsafePath) {
-        await addSafeDirectory(unsafePath)
-        const type = await getRepositoryType(repository.path)
-        if (type.kind !== 'unsafe') {
-          this.checkAgain()
-        }
-      }
-    } catch (error) {
-      this.props.dispatcher.postError(error)
-    } finally {
+    if (unsafePath) {
+      await addSafeDirectory(unsafePath)
+      const type = await getRepositoryType(repository.path)
+
       this.setState({ isTrustingPath: false })
+
+      if (type.kind !== 'unsafe') {
+        this.checkAgain()
+      }
     }
   }
 
@@ -107,7 +104,7 @@ export class MissingRepository extends React.Component<
 
     buttons.push(
       <Button key="remove" onClick={this.remove}>
-        Remove
+        移除
       </Button>
     )
 

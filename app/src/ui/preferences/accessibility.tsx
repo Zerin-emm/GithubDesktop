@@ -21,10 +21,10 @@ export class Accessibility extends React.Component<
   public render() {
     return (
       <DialogContent>
-        <div className="accessibility-section">
-          <h2>Accessibility</h2>
+        <div className="advanced-section">
+          <h2>辅助功能</h2>
           <Checkbox
-            label="Underline links"
+            label="为链接添加下划线"
             value={
               this.props.underlineLinks ? CheckboxValue.On : CheckboxValue.Off
             }
@@ -33,15 +33,13 @@ export class Accessibility extends React.Component<
           />
           <p
             id="underline-setting-description"
-            className="settings-description"
+            className="git-settings-description"
           >
-            When enabled, GitHub Desktop will underline links in commit
-            messages, comments, and other text fields. This can help make links
-            easier to distinguish. {this.renderExampleLink()}
+            启用后,GitHub Desktop 会为提交信息、评论及其他文本中的链接添加下划线,便于辨认链接。 {this.renderExampleLink()}
           </p>
 
           <Checkbox
-            label="Show check marks in the diff"
+            label="在差异视图中显示勾选标记"
             value={
               this.props.showDiffCheckMarks
                 ? CheckboxValue.On
@@ -52,11 +50,9 @@ export class Accessibility extends React.Component<
           />
           <p
             id="diff-checkmarks-setting-description"
-            className="settings-description"
+            className="git-settings-description"
           >
-            When enabled, check marks will be displayed along side the line
-            numbers and groups of line numbers in the diff when committing. When
-            disabled, the line number controls will be less prominent.
+            启用后,提交时差异视图的行号和行号分组旁会显示勾选标记;禁用后行号控件将不那么醒目。
           </p>
         </div>
       </DialogContent>
@@ -64,15 +60,14 @@ export class Accessibility extends React.Component<
   }
 
   private renderExampleLink() {
-    // The example link is rendered with inline style to override the global
-    // underline setting since this is a non-interactive visual preview.
+    // The example link is rendered with inline style to override the global setting.
     const style = {
       textDecoration: this.props.underlineLinks ? 'underline' : 'none',
     }
 
     return (
-      <span className="link-button-component example-link" style={style}>
-        This is an example link
+      <span className="link-button-component" style={style}>
+        这是一个示例链接
       </span>
     )
   }

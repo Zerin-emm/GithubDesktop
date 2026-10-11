@@ -36,7 +36,7 @@ export class ConfirmDiscardStashDialog extends React.Component<
   }
 
   public render() {
-    const title = __DARWIN__ ? 'Discard Stash?' : 'Discard stash?'
+    const title = __DARWIN__ ? 'Discard Stash?' : "放弃临时保存的更改？"
 
     return (
       <Dialog
@@ -56,7 +56,7 @@ export class ConfirmDiscardStashDialog extends React.Component<
           </Row>
           <Row>
             <Checkbox
-              label="Do not show this message again"
+              label="不再显示此消息"
               value={
                 this.state.confirmDiscardStash
                   ? CheckboxValue.Off
@@ -67,7 +67,7 @@ export class ConfirmDiscardStashDialog extends React.Component<
           </Row>
         </DialogContent>
         <DialogFooter>
-          <OkCancelButtonGroup destructive={true} okButtonText="Discard" />
+          <OkCancelButtonGroup destructive={true} okButtonText="放弃" />
         </DialogFooter>
       </Dialog>
     )

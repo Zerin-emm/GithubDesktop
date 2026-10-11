@@ -1,6 +1,9 @@
 import * as React from 'react'
 
-import { Repository } from '../../models/repository'
+import {
+  Repository,
+  isRepositoryWithGitHubRepository,
+} from '../../models/repository'
 import { Dispatcher } from '../dispatcher'
 import { Branch, StartPoint } from '../../models/branch'
 import { Row } from '../lib/row'
@@ -28,13 +31,12 @@ import { CommitOneLine } from '../../models/commit'
 import { PopupType } from '../../models/popup'
 import { RepositorySettingsTab } from '../repository-settings/repository-settings'
 import { isRepositoryWithForkedGitHubRepository } from '../../models/repository'
-import { IAPIRepoRuleset } from '../../lib/api'
+import { API, APIRepoRuleType, IAPIRepoRuleset } from '../../lib/api'
 import { Account } from '../../models/account'
-import {
-  IBranchRuleError,
-  checkBranchNameRules,
-  renderBranchNameRuleError,
-} from '../lib/branch-name-rule-validation'
+import { getAccountForRepository } from '../../lib/get-account-for-repository'
+import { InputError } from '../lib/input-description/input-error'
+import { InputWarning } from '../lib/input-description/input-warning'
+import { parseRepoRules, useRepoRulesLogic } from '../../lib/helpers/repo-rules'
 
 interface ICreateBranchProps {
   readonly repository: Repository
@@ -72,7 +74,7 @@ interface ICreateBranchProps {
 }
 
 interface ICreateBranchState {
-  readonly currentError: IBranchRuleError | null
+  readonly currentError: { error: Error; isWarning: boolean } | null
   readonly branchName: string
   readonly startPoint: StartPoint
 
@@ -171,24 +173,21 @@ export class CreateBranch extends React.Component<
     if (targetCommit !== undefined) {
       return (
         <p>
-          Your new branch will be based on the commit '{targetCommit.summary}' (
-          {targetCommit.sha.substring(0, 7)}) from your repository.
+          您的新分支将基于提交 '{targetCommit.summary}' (
+          {targetCommit.sha.substring(0, 7)}) 从您的存储库。
         </p>
       )
     } else if (tip.kind === TipState.Detached) {
       return (
         <p>
-          You do not currently have any branch checked out (your HEAD reference
-          is detached). As such your new branch will be based on your currently
-          checked out commit ({tip.currentSha.substring(0, 7)}
+          您当前没有签出任何分支（您的头引用已分离). 因此，您的新分支将基于您当前签出的提交 ({tip.currentSha.substring(0, 7)}
           ).
         </p>
       )
     } else if (tip.kind === TipState.Unborn) {
       return (
         <p>
-          Your current branch is unborn (does not contain any commits). Creating
-          a new branch will rename the current branch.
+          当前分支未绑定（不包含任何提交）。创建新分支将重命名当前分支。
         </p>
       )
     } else if (tip.kind === TipState.Valid) {
@@ -210,6 +209,37 @@ export class CreateBranch extends React.Component<
       return this.renderRegularBranchSelection(tip.branch.name, defaultBranch)
     } else {
       return assertNever(tip, `Unknown tip kind ${tipKind}`)
+    }
+  }
+
+  private renderBranchNameErrors() {
+    const { currentError } = this.state
+    if (!currentError) {
+      return null
+    }
+
+    if (currentError.isWarning) {
+      return (
+        <Row>
+          <InputWarning
+            id={this.ERRORS_ID}
+            trackedUserInput={this.state.branchName}
+          >
+            {currentError.error.message}
+          </InputWarning>
+        </Row>
+      )
+    } else {
+      return (
+        <Row>
+          <InputError
+            id={this.ERRORS_ID}
+            trackedUserInput={this.state.branchName}
+          >
+            {currentError.error.message}
+          </InputError>
+        </Row>
+      )
     }
   }
 
@@ -237,17 +267,13 @@ export class CreateBranch extends React.Component<
       >
         <DialogContent>
           <RefNameTextBox
-            label="Name"
+            label="名称"
             ariaDescribedBy={hasError ? this.ERRORS_ID : undefined}
             initialValue={this.props.initialName}
             onValueChange={this.onBranchNameChange}
           />
 
-          {renderBranchNameRuleError(
-            this.state.currentError,
-            this.ERRORS_ID,
-            this.state.branchName
-          )}
+          {this.renderBranchNameErrors()}
 
           {renderBranchNameExistsOnRemoteWarning(
             this.state.branchName,
@@ -272,7 +298,7 @@ export class CreateBranch extends React.Component<
       return this.props.headerText
     }
 
-    return __DARWIN__ ? 'Create a Branch' : 'Create a branch'
+    return __DARWIN__ ? 'Create a Branch' : "新建分支"
   }
 
   private getOkButtonText = (): string => {
@@ -280,7 +306,7 @@ export class CreateBranch extends React.Component<
       return this.props.okButtonText
     }
 
-    return __DARWIN__ ? 'Create Branch' : 'Create branch'
+    return __DARWIN__ ? 'Create Branch' : "确定"
   }
 
   private onBranchNameChange = (name: string) => {
@@ -295,7 +321,7 @@ export class CreateBranch extends React.Component<
 
     const currentError = alreadyExists
       ? {
-          error: new Error(`A branch named ${branchName} already exists.`),
+          error: new Error(`名为 ${branchName} 的分支已存在。`),
           isWarning: false,
         }
       : null
@@ -318,29 +344,114 @@ export class CreateBranch extends React.Component<
     })
   }
 
+  /**
+   * Checks repo rules to see if the provided branch name is valid for the
+   * current user and repository. The "get all rules for a branch" endpoint
+   * is called first, and if a "creation" or "branch name" rule is found,
+   * then those rulesets are checked to see if the current user can bypass
+   * them.
+   */
   private checkBranchRules = async (branchName: string) => {
     if (
       this.state.branchName !== branchName ||
+      this.props.accounts.length === 0 ||
+      !isRepositoryWithGitHubRepository(this.props.repository) ||
       branchName === '' ||
       this.state.currentError !== null
     ) {
       return
     }
 
-    const result = await checkBranchNameRules(
-      branchName,
+    const account = getAccountForRepository(
       this.props.accounts,
-      this.props.repository,
-      this.props.cachedRepoRulesets
+      this.props.repository
     )
 
-    // Make sure user branch name hasn't changed during async calls
+    if (
+      account === null ||
+      !useRepoRulesLogic(account, this.props.repository)
+    ) {
+      return
+    }
+
+    const api = API.fromAccount(account)
+    const branchRules = await api.fetchRepoRulesForBranch(
+      this.props.repository.gitHubRepository.owner.login,
+      this.props.repository.gitHubRepository.name,
+      branchName
+    )
+
+    // Make sure user branch name hasn't changed during api call
     if (this.state.branchName !== branchName) {
       return
     }
 
-    if (result !== null) {
-      this.setState({ currentError: result })
+    // filter the rules to only the relevant ones and get their IDs. use a Set to dedupe.
+    const toCheck = new Set(
+      branchRules
+        .filter(
+          r =>
+            r.type === APIRepoRuleType.Creation ||
+            r.type === APIRepoRuleType.BranchNamePattern
+        )
+        .map(r => r.ruleset_id)
+    )
+
+    // there are no relevant rules for this branch name, so return
+    if (toCheck.size === 0) {
+      return
+    }
+
+    // check for actual failures
+    const { branchNamePatterns, creationRestricted } = await parseRepoRules(
+      branchRules,
+      this.props.cachedRepoRulesets,
+      this.props.repository
+    )
+
+    // Make sure user branch name hasn't changed during parsing of repo rules
+    // (async due to a config retrieval of users with commit signing repo rules)
+    if (this.state.branchName !== branchName) {
+      return
+    }
+
+    const { status } = branchNamePatterns.getFailedRules(branchName)
+
+    // Only possible kind of failures is branch name pattern failures and creation restriction
+    if (creationRestricted !== true && status === 'pass') {
+      return
+    }
+
+    // check cached rulesets to see which ones the user can bypass
+    let cannotBypass = false
+    for (const id of toCheck) {
+      const rs = this.props.cachedRepoRulesets.get(id)
+
+      if (rs?.current_user_can_bypass !== 'always') {
+        // the user cannot bypass, so stop checking
+        cannotBypass = true
+        break
+      }
+    }
+
+    if (cannotBypass) {
+      this.setState({
+        currentError: {
+          error: new Error(
+            `Branch name '${branchName}' is restricted by repo rules.`
+          ),
+          isWarning: false,
+        },
+      })
+    } else {
+      this.setState({
+        currentError: {
+          error: new Error(
+            `Branch name '${branchName}' is restricted by repo rules, but you can bypass them. Proceed with caution!`
+          ),
+          isWarning: true,
+        },
+      })
     }
   }
 
@@ -429,7 +540,7 @@ export class CreateBranch extends React.Component<
     if (defaultBranch === null || defaultBranch.name === currentBranchName) {
       return (
         <div>
-          Your new branch will be based on your currently checked out branch (
+          新分支将基于当前签出的分支 (
           <Ref>{currentBranchName}</Ref>){this.renderForkLinkSuffix()}.{' '}
           {defaultBranch?.name === currentBranchName && (
             <>
@@ -444,13 +555,13 @@ export class CreateBranch extends React.Component<
         {
           title: defaultBranch.name,
           description:
-            "The default branch in your repository. Pick this to start on something new that's not dependent on your current branch.",
+            "你的代码库中的默认分支。选择它来开始一些不依赖于当前分支的新工作",
           key: StartPoint.DefaultBranch,
         },
         {
           title: currentBranchName,
           description:
-            'The currently checked out branch. Pick this if you need to build on work done on this branch.',
+            "当前检出的分支。如果你需要在这个分支的基础上继续工作，请选择它",
           key: StartPoint.CurrentBranch,
         },
       ]
@@ -497,13 +608,13 @@ export class CreateBranch extends React.Component<
         {
           title: upstreamDefaultBranch.name,
           description:
-            "The default branch of the upstream repository. Pick this to start on something new that's not dependent on your current branch.",
+            "上游代码库的默认分支。选择它来开始一些不依赖于当前分支的新工作",
           key: StartPoint.UpstreamDefaultBranch,
         },
         {
           title: currentBranchName,
           description:
-            'The currently checked out branch. Pick this if you need to build on work done on this branch.',
+            "当前检出的分支。如果你需要在这个分支的基础上继续工作，请选择它",
           key: StartPoint.CurrentBranch,
         },
       ]
@@ -559,7 +670,7 @@ export class CreateBranch extends React.Component<
   ) => (
     <Row>
       <VerticalSegmentedControl
-        label="Create branch based on…"
+        label="基于以下创建分支…"
         items={items}
         selectedKey={selectedValue}
         onSelectionChanged={this.onBaseBranchChanged}
@@ -579,7 +690,7 @@ export class CreateBranch extends React.Component<
 /** Reusable snippet */
 const defaultBranchLink = (
   <LinkButton uri="https://help.github.com/articles/setting-the-default-branch/">
-    default branch
+    默认分支
   </LinkButton>
 )
 

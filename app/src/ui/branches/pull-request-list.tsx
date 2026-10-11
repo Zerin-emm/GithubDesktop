@@ -68,9 +68,6 @@ interface IPullRequestListProps {
   readonly onMouseLeavePullRequest: (
     event: React.MouseEvent<HTMLDivElement, MouseEvent>
   ) => void
-
-  /** Optional callback to checkout a PR in a new worktree */
-  readonly onCheckoutInNewWorktree?: (pullRequest: PullRequest) => void
 }
 
 interface IPullRequestListState {
@@ -218,17 +215,10 @@ export class PullRequestList extends React.Component<
   ): void => {
     event.preventDefault()
 
-    const { onCheckoutInNewWorktree } = this.props
-    const pullRequest = item.pullRequest
-
     const items = generatePullRequestContextMenuItems({
       onViewPullRequestOnGitHub: () => {
-        this.props.dispatcher.showPullRequestByPR(pullRequest)
+        this.props.dispatcher.showPullRequestByPR(item.pullRequest)
       },
-      onCheckoutInNewWorktree:
-        onCheckoutInNewWorktree !== undefined
-          ? () => onCheckoutInNewWorktree(pullRequest)
-          : undefined,
     })
 
     showContextualMenu(items)
@@ -323,7 +313,7 @@ export class PullRequestList extends React.Component<
   private renderListHeader = () => {
     return (
       <div className="filter-list-group-header">
-        Pull requests in {this.getRepositoryName()}
+        Pull Request {this.getRepositoryName()}
       </div>
     )
   }

@@ -22,12 +22,11 @@
  */
 
 /**
- * @typedef {import('@typescript-eslint/utils').TSESLint.RuleModule<'unboundMethod', []>} RuleModule
+ * @typedef {import('eslint').Rule.RuleModule} RuleModule
  */
 
 /** @type {RuleModule} */
 module.exports = {
-  defaultOptions: [],
   meta: {
     type: 'problem',
 

@@ -1,3 +1,4 @@
+import * as Path from 'path'
 import { ChildProcess } from 'child_process'
 import { GitError } from 'dugite'
 import byline from 'byline'
@@ -21,16 +22,14 @@ import {
   gitRebaseArguments,
   IGitStringExecutionOptions,
   IGitStringResult,
-  HookCallbackOptions,
 } from './core'
 import { stageManualConflictResolution } from './stage'
 import { stageFiles } from './update-index'
 import { getStatus } from './status'
 import { getCommitsBetweenCommits } from './rev-list'
 import { Branch } from '../../models/branch'
-import { join } from 'path'
 import { readFile } from 'fs/promises'
-import { pathExists } from '../path-exists'
+import { pathExists } from '../../ui/lib/path-exists'
 
 /** The app-specific results from attempting to rebase a repository */
 export enum RebaseResult {
@@ -73,7 +72,7 @@ export enum RebaseResult {
  * a rebase operation is underway.
  */
 function isRebaseHeadSet(repository: Repository) {
-  const path = join(repository.resolvedGitDir, 'REBASE_HEAD')
+  const path = Path.join(repository.path, '.git', 'REBASE_HEAD')
   return pathExists(path)
 }
 
@@ -100,14 +99,14 @@ export async function getRebaseInternalState(
 
   try {
     originalBranchTip = await readFile(
-      join(repository.resolvedGitDir, 'rebase-merge', 'orig-head'),
+      Path.join(repository.path, '.git', 'rebase-merge', 'orig-head'),
       'utf8'
     )
 
     originalBranchTip = originalBranchTip.trim()
 
     targetBranch = await readFile(
-      join(repository.resolvedGitDir, 'rebase-merge', 'head-name'),
+      Path.join(repository.path, '.git', 'rebase-merge', 'head-name'),
       'utf8'
     )
 
@@ -116,7 +115,7 @@ export async function getRebaseInternalState(
     }
 
     baseBranchTip = await readFile(
-      join(repository.resolvedGitDir, 'rebase-merge', 'onto'),
+      Path.join(repository.path, '.git', 'rebase-merge', 'onto'),
       'utf8'
     )
 
@@ -168,7 +167,7 @@ export async function getRebaseSnapshot(repository: Repository): Promise<{
   try {
     // this contains the patch number that was recently applied to the repository
     const nextText = await readFile(
-      join(repository.resolvedGitDir, 'rebase-merge', 'msgnum'),
+      Path.join(repository.path, '.git', 'rebase-merge', 'msgnum'),
       'utf8'
     )
 
@@ -183,7 +182,7 @@ export async function getRebaseSnapshot(repository: Repository): Promise<{
 
     // this contains the total number of patches to be applied to the repository
     const lastText = await readFile(
-      join(repository.resolvedGitDir, 'rebase-merge', 'end'),
+      Path.join(repository.path, '.git', 'rebase-merge', 'end'),
       'utf8'
     )
 
@@ -197,14 +196,14 @@ export async function getRebaseSnapshot(repository: Repository): Promise<{
     }
 
     originalBranchTip = await readFile(
-      join(repository.resolvedGitDir, 'rebase-merge', 'orig-head'),
+      Path.join(repository.path, '.git', 'rebase-merge', 'orig-head'),
       'utf8'
     )
 
     originalBranchTip = originalBranchTip.trim()
 
     baseBranchTip = await readFile(
-      join(repository.resolvedGitDir, 'rebase-merge', 'onto'),
+      Path.join(repository.path, '.git', 'rebase-merge', 'onto'),
       'utf8'
     )
 
@@ -263,7 +262,7 @@ export async function getRebaseSnapshot(repository: Repository): Promise<{
  */
 async function readRebaseHead(repository: Repository): Promise<string | null> {
   try {
-    const rebaseHead = join(repository.resolvedGitDir, 'REBASE_HEAD')
+    const rebaseHead = Path.join(repository.path, '.git', 'REBASE_HEAD')
     const rebaseCurrentCommitOutput = await readFile(rebaseHead, 'utf8')
     return rebaseCurrentCommitOutput.trim()
   } catch (err) {
@@ -393,13 +392,7 @@ export async function rebase(
   }
 
   const result = await git(
-    [
-      ...gitRebaseArguments(),
-      'rebase',
-      '--',
-      baseBranch.name,
-      targetBranch.name,
-    ],
+    [...gitRebaseArguments(), 'rebase', baseBranch.name, targetBranch.name],
     repository.path,
     'rebase',
     options
@@ -445,7 +438,8 @@ export async function continueRebase(
   repository: Repository,
   files: ReadonlyArray<WorkingDirectoryFileChange>,
   manualResolutions: ReadonlyMap<string, ManualConflictResolution> = new Map(),
-  opts?: RebaseInteractiveOptions
+  progressCallback?: (progress: IMultiCommitOperationProgress) => void,
+  gitEditor: string = ':'
 ): Promise<RebaseResult> {
   const trackedFiles = files.filter(f => {
     return f.status.kind !== AppFileStatusKind.Untracked
@@ -490,13 +484,13 @@ export async function continueRebase(
       GitError.UnresolvedConflicts,
     ]),
     env: {
-      GIT_EDITOR: opts?.gitEditor ?? ':',
+      GIT_EDITOR: gitEditor,
     },
   }
 
   let options = baseOptions
 
-  if (opts?.progressCallback) {
+  if (progressCallback !== undefined) {
     const snapshot = await getRebaseSnapshot(repository)
 
     if (snapshot === null) {
@@ -508,15 +502,8 @@ export async function continueRebase(
 
     options = configureOptionsForRebase(baseOptions, {
       commits: snapshot.commits,
-      progressCallback: opts.progressCallback,
+      progressCallback,
     })
-  }
-
-  options = {
-    ...options,
-    onTerminalOutputAvailable: opts?.onTerminalOutputAvailable,
-    onHookFailure: opts?.onHookFailure,
-    onHookProgress: opts?.onHookProgress,
   }
 
   if (trackedFilesAfter.length === 0) {
@@ -525,7 +512,7 @@ export async function continueRebase(
     )
 
     const result = await git(
-      ['rebase', '--skip', ...(opts?.noVerify ? ['--no-verify'] : [])],
+      ['rebase', '--skip'],
       repository.path,
       'continueRebaseSkipCurrentCommit',
       options
@@ -535,7 +522,7 @@ export async function continueRebase(
   }
 
   const result = await git(
-    ['rebase', '--continue', ...(opts?.noVerify ? ['--no-verify'] : [])],
+    ['rebase', '--continue'],
     repository.path,
     'continueRebase',
     options
@@ -543,22 +530,6 @@ export async function continueRebase(
 
   return parseRebaseResult(result)
 }
-
-export type RebaseInteractiveOptions = {
-  /**
-   * a description of the action to be displayed in the progress dialog - i.e. Squash, Amend, etc..
-   */
-  action?: string
-
-  /**
-   * the GIT_EDITOR environment variable to use during the interactive rebase,
-   * defaults to ':' which is a no-op command
-   */
-  gitEditor?: string
-  progressCallback?: (progress: IMultiCommitOperationProgress) => void
-  commits?: ReadonlyArray<Commit>
-  noVerify?: boolean
-} & HookCallbackOptions
 
 /**
  * Method for initiating interactive rebase in the app.
@@ -572,27 +543,30 @@ export type RebaseInteractiveOptions = {
  * @param lastRetainedCommitRef the commit before the earliest commit to be
  * changed during the interactive rebase or null if commit is root (first commit
  * in history) of branch
+ * @param action a description of the action to be displayed in the progress
+ * dialog - i.e. Squash, Amend, etc..
  */
 export async function rebaseInteractive(
   repository: Repository,
   pathOfGeneratedTodo: string,
   lastRetainedCommitRef: string | null,
-  opts?: RebaseInteractiveOptions
+  action: string = 'Interactive rebase',
+  gitEditor: string = ':',
+  progressCallback?: (progress: IMultiCommitOperationProgress) => void,
+  commits?: ReadonlyArray<Commit>
 ): Promise<RebaseResult> {
   const baseOptions: IGitStringExecutionOptions = {
     expectedErrors: new Set([GitError.RebaseConflicts]),
     env: {
       GIT_SEQUENCE_EDITOR: undefined,
-      GIT_EDITOR: opts?.gitEditor ?? ':',
+      GIT_EDITOR: gitEditor,
     },
   }
 
   let options = baseOptions
 
-  const { progressCallback, commits } = opts ?? {}
-
-  if (progressCallback) {
-    if (!commits) {
+  if (progressCallback !== undefined) {
+    if (commits === undefined) {
       log.warn(`Unable to interactively rebase if no commits`)
       return RebaseResult.Error
     }
@@ -601,13 +575,6 @@ export async function rebaseInteractive(
       commits,
       progressCallback,
     })
-  }
-
-  options = {
-    ...options,
-    onHookProgress: opts?.onHookProgress,
-    onHookFailure: opts?.onHookFailure,
-    onTerminalOutputAvailable: opts?.onTerminalOutputAvailable,
   }
 
   /* If the commit is the first commit in the branch, we cannot reference it
@@ -620,12 +587,11 @@ export async function rebaseInteractive(
       // This replaces interactive todo with contents of file at pathOfGeneratedTodo
       `sequence.editor=cat "${pathOfGeneratedTodo}" >`,
       'rebase',
-      ...(opts?.noVerify ? ['--no-verify'] : []),
       '-i',
       ref,
     ],
     repository.path,
-    opts?.action ?? 'Interactive rebase',
+    action,
     options
   )
 

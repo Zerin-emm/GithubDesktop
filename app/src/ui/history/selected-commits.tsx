@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { writeClipboardText } from '../main-process-proxy'
+import { clipboard } from 'electron'
 import * as Path from 'path'
 
 import { Repository } from '../../models/repository'
@@ -32,7 +32,7 @@ import { IMenuItem } from '../../lib/menu-item'
 import { IChangesetData } from '../../lib/git'
 import { IConstrainedValue } from '../../lib/app-state'
 import { clamp } from '../../lib/clamp'
-import { pathExists } from '../../lib/path-exists'
+import { pathExists } from '../lib/path-exists'
 import { UnreachableCommitsTab } from './unreachable-commits-dialog'
 import { ExpandableCommitSummary } from './expandable-commit-summary'
 import { DiffHeader } from '../diff/diff-header'
@@ -349,17 +349,16 @@ export class SelectedCommits extends React.Component<
           <img src={BlankSlateImage} className="blankslate-image" alt="" />
           <div>
             <p>
-              Unable to display diff when multiple non-consecutive selected.
+              无法显示差异，当选择多个 非连续性的 selected.
             </p>
-            <div>You can:</div>
+            <div>你可以：</div>
             <ul>
               <li>
-                Select a single commit or a range of consecutive commits to view
-                a diff.
+                选择单个提交 或连续的提交范围。 以查看差异。
               </li>
-              <li>Drag the commits to the branch menu to cherry-pick them.</li>
-              <li>Drag the commits to squash or reorder them.</li>
-              <li>Right click on multiple commits to see options.</li>
+              <li>将提交拖动到分支菜单中以挑选它们。</li>
+              <li>将提交拖动到一起以压缩它们或重新排序。</li>
+              <li>右键单击多个提交以查看选项。</li>
             </ul>
           </div>
         </div>
@@ -388,7 +387,7 @@ export class SelectedCommits extends React.Component<
         {
           label: __DARWIN__
             ? 'File Does Not Exist on Disk'
-            : 'File does not exist on disk',
+            : "文件不存在于磁盘上",
           enabled: false,
         },
       ])
@@ -421,23 +420,23 @@ export class SelectedCommits extends React.Component<
       { type: 'separator' },
       {
         label: CopyFilePathLabel,
-        action: () => writeClipboardText(fullPath),
+        action: () => clipboard.writeText(fullPath),
       },
       {
         label: CopyRelativeFilePathLabel,
-        action: () => writeClipboardText(Path.normalize(file.path)),
+        action: () => clipboard.writeText(Path.normalize(file.path)),
       },
       { type: 'separator' },
     ]
 
-    let viewOnGitHubLabel = 'View on GitHub'
+    let viewOnGitHubLabel = "在 GitHub 上查看"
     const gitHubRepository = repository.gitHubRepository
 
     if (
       gitHubRepository &&
       gitHubRepository.endpoint !== getDotComAPIEndpoint()
     ) {
-      viewOnGitHubLabel = 'View on GitHub Enterprise'
+      viewOnGitHubLabel = "在Github上查看 Enterprise"
     }
 
     items.push({
@@ -467,7 +466,7 @@ function NoCommitSelected() {
   return (
     <div className="panel blankslate">
       <img src={BlankSlateImage} className="blankslate-image" alt="" />
-      No commit selected
+      未选择提交
     </div>
   )
 }

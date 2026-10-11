@@ -41,7 +41,7 @@ export class UpstreamAlreadyExists extends React.Component<IUpstreamAlreadyExist
     return (
       <Dialog
         title={
-          __DARWIN__ ? 'Upstream Already Exists' : 'Upstream already exists'
+          __DARWIN__ ? 'Upstream Already Exists' : "上游已存在"
         }
         onDismissed={this.props.onDismissed}
         onSubmit={this.onUpdate}
@@ -66,8 +66,8 @@ export class UpstreamAlreadyExists extends React.Component<IUpstreamAlreadyExist
         <DialogFooter>
           <OkCancelButtonGroup
             destructive={true}
-            okButtonText="Update"
-            cancelButtonText="Ignore"
+            okButtonText="更新"
+            cancelButtonText="忽略"
             onCancelButtonClick={this.onIgnore}
           />
         </DialogFooter>

@@ -27,7 +27,7 @@ export function renderShellLink(openThisRepositoryInShell: () => void) {
   return (
     <div>
       <LinkButton onClick={openThisRepositoryInShell}>
-        Open in command line,
+        打开于 command line,
       </LinkButton>{' '}
       your tool of choice, or close to resolve manually.
     </div>

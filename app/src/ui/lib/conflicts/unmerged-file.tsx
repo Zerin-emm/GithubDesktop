@@ -161,7 +161,7 @@ const renderResolvedFile: React.FunctionComponent<{
           )}
           ariaDescribedBy={props.path}
         >
-          Undo
+          撤销
         </Button>
       )}
       <div className="green-circle">

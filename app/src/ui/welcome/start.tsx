@@ -12,7 +12,7 @@ import { SamplesURL } from '../../lib/stats'
 /**
  * The URL to the sign-up page on GitHub.com. Used in conjunction
  * with account actions in the app where the user might want to
- * consider signing up.
+ * consider signing up.node vendor\yarn-1.21.1.js start
  */
 export const CreateAccountURL = 'https://github.com/join?source=github-desktop'
 
@@ -38,9 +38,7 @@ export class Start extends React.Component<IStartProps, {}> {
           {!this.props.loadingBrowserAuth ? (
             <>
               <p id="start-description" className="welcome-text">
-                GitHub Desktop is a seamless way to contribute to projects on
-                GitHub and GitHub Enterprise. Sign in below to get started with
-                your existing projects.
+                GitHub Desktop 是一种无缝方式，可让您为 GitHub 和 GitHub Enterprise 上的项目做出贡献。请在下方登录，以便开始使用您的现有项目.
               </p>
             </>
           ) : (
@@ -57,49 +55,48 @@ export class Start extends React.Component<IStartProps, {}> {
               role="link"
             >
               {this.props.loadingBrowserAuth && <Loading />}
-              Sign in to GitHub.com
+              GitHub登录
               <Octicon symbol={octicons.linkExternal} />
             </Button>
             {this.props.loadingBrowserAuth ? (
-              <Button onClick={this.cancelBrowserAuth}>Cancel</Button>
+              <Button onClick={this.cancelBrowserAuth}>取消</Button>
             ) : (
               <Button onClick={this.signInToEnterprise}>
-                Sign in to GitHub Enterprise
+                Github企业版登录
               </Button>
             )}
           </div>
           <div className="skip-action-container">
             <p className="welcome-text">
-              New to GitHub?{' '}
+              第一次使用Github？{' '}
               <LinkButton
                 uri={CreateAccountURL}
                 className="create-account-link"
               >
-                Create your free account.
+                创建账户
               </LinkButton>
             </p>
             <LinkButton className="skip-button" onClick={this.skip}>
-              Skip this step
+              跳过
             </LinkButton>
           </div>
         </div>
 
         <div className="start-footer">
           <p>
-            By creating an account, you agree to the{' '}
+            创建账户，代表您同意{' '}
             <LinkButton uri={'https://github.com/site/terms'}>
-              Terms of Service
+              服务条款
             </LinkButton>
-            . For more information about GitHub's privacy practices, see the{' '}
+            . 更多信息，请参阅{' '}
             <LinkButton uri={'https://github.com/site/privacy'}>
-              GitHub Privacy Statement.
+              GitHub 隐私声明.
             </LinkButton>
           </p>
           <p>
-            GitHub Desktop sends usage metrics to improve the product and inform
-            feature decisions.{' '}
+            GitHub Desktop 会发送使用数据以改进产品并提供功能决策参考.{' '}
             <LinkButton uri={SamplesURL}>
-              Learn more about user metrics.
+              了解更多关于用户数据的信息.
             </LinkButton>
           </p>
         </div>

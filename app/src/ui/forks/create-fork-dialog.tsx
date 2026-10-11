@@ -77,7 +77,7 @@ export class CreateForkDialog extends React.Component<
   public render() {
     return (
       <Dialog
-        title="Do you want to fork this repository?"
+        title="是否要 fork 此存储库？"
         onDismissed={this.props.onDismissed}
         onSubmit={this.state.error ? undefined : this.onSubmit}
         dismissDisabled={this.state.loading}
@@ -128,7 +128,7 @@ function renderCreateForkDialogContent(
         <OkCancelButtonGroup
           destructive={true}
           okButtonText={
-            __DARWIN__ ? 'Fork This Repository' : 'Fork this repository'
+            __DARWIN__ ? 'Fork This Repository' : "Fork 该存储库"
           }
           okButtonDisabled={loading}
           cancelButtonDisabled={loading}

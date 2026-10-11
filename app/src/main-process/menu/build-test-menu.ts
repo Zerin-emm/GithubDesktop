@@ -14,7 +14,7 @@ export function buildTestMenu() {
       label: 'Command Line Tool',
       submenu: [
         {
-          label: 'Install',
+          label: "安装",
           click: emit('install-windows-cli'),
         },
         {
@@ -35,7 +35,7 @@ export function buildTestMenu() {
       click: emit('test-discarded-changes-will-be-unrecoverable'),
     },
     {
-      label: 'Do you want to fork this repository?',
+      label: "是否要 fork 此存储库？",
       click: emit('test-do-you-want-fork-this-repository'),
     },
     {
@@ -43,7 +43,7 @@ export function buildTestMenu() {
       click: emit('test-newer-commits-on-remote'),
     },
     {
-      label: 'Files Too Large',
+      label: "文件过大",
       click: emit('test-files-too-large'),
     },
     {
@@ -119,14 +119,6 @@ export function buildTestMenu() {
       click: emit('test-notification'),
     },
     {
-      label: 'Dispatch CLI action',
-      click: emit('test-cli-action'),
-    },
-    {
-      label: 'Send stats',
-      click: emit('test-send-stats'),
-    },
-    {
       label: 'Show popup',
       submenu: [
         {
@@ -148,10 +140,6 @@ export function buildTestMenu() {
         {
           label: 'About dialog (test mode)',
           click: emit('test-about-dialog'),
-        },
-        {
-          label: 'Copilot snapshot card',
-          click: emit('test-copilot-snapshot-card'),
         },
       ],
     },

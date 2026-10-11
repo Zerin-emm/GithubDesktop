@@ -11,6 +11,7 @@ import { sanitizedRepositoryName } from '../add-repository/sanitized-repository-
 import { Octicon } from '../octicons'
 import * as octicons from '../octicons/octicons.generated'
 import { RepositoryPublicationSettings } from '../../models/publish-settings'
+import { enableMultipleEnterpriseAccounts } from '../../lib/feature-flag'
 import { AccountPicker } from '../account-picker'
 
 interface IPublishRepositoryProps {
@@ -136,7 +137,7 @@ export class PublishRepository extends React.Component<
 
     return (
       <Select
-        label="Organization"
+        label="组织"
         value={selectedIndex.toString()}
         onChange={this.onOrgChange}
       >
@@ -148,7 +149,7 @@ export class PublishRepository extends React.Component<
   public render() {
     return (
       <DialogContent>
-        {this.props.accounts.length > 1 && (
+        {enableMultipleEnterpriseAccounts() && this.props.accounts.length > 1 && (
           <Row>
             <AccountPicker
               accounts={this.props.accounts}
@@ -161,7 +162,7 @@ export class PublishRepository extends React.Component<
 
         <Row>
           <TextBox
-            label="Name"
+            label="名称"
             value={this.name}
             onValueChanged={this.onNameChange}
           />
@@ -171,7 +172,7 @@ export class PublishRepository extends React.Component<
 
         <Row>
           <TextBox
-            label="Description"
+            label="描述"
             value={this.props.settings.description}
             onValueChanged={this.onDescriptionChange}
           />

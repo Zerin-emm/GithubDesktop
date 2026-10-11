@@ -15,13 +15,8 @@ export abstract class CherryPick extends BaseMultiCommitOperation {
       this.props
     const { operationDetail, targetBranch } = state
 
-    // Conflicts were resolved externally — nothing left to continue.
-    if (conflictState === null) {
-      this.onFlowEnded()
-      return
-    }
-
     if (
+      conflictState === null ||
       operationDetail.kind !== MultiCommitOperationKind.CherryPick ||
       targetBranch === null
     ) {
@@ -123,7 +118,7 @@ export abstract class CherryPick extends BaseMultiCommitOperation {
 
     const okButtonText = __DARWIN__
       ? 'Create Branch and Cherry-pick'
-      : 'Create branch and cherry-pick'
+      : "创建分支并挑选"
 
     const headerText = __DARWIN__
       ? 'Cherry-pick to New Branch'

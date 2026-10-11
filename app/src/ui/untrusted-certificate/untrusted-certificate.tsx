@@ -37,7 +37,7 @@ export class UntrustedCertificate extends React.Component<
 
     return (
       <Dialog
-        title={__DARWIN__ ? 'Untrusted Server' : 'Untrusted server'}
+        title={__DARWIN__ ? 'Untrusted Server' : "不受信任的服务器"}
         onDismissed={this.props.onDismissed}
         onSubmit={this.onContinue}
         type={__DARWIN__ ? 'warning' : 'error'}
@@ -66,7 +66,7 @@ export class UntrustedCertificate extends React.Component<
         <DialogFooter>
           <OkCancelButtonGroup
             destructive={true}
-            okButtonText={__DARWIN__ ? 'View Certificate' : 'Add certificate'}
+            okButtonText={__DARWIN__ ? 'View Certificate' : "添加证书"}
           />
         </DialogFooter>
       </Dialog>

@@ -146,7 +146,7 @@ export class GitConfigUserForm extends React.Component<
       <div>
         <Row>
           <TextBox
-            label="Name"
+            label="名称"
             value={this.props.name}
             disabled={this.props.disabled}
             onValueChanged={this.props.onNameChanged}
@@ -181,7 +181,7 @@ export class GitConfigUserForm extends React.Component<
     return (
       <Row>
         <Select
-          label="Email"
+          label="邮箱"
           value={
             this.state.emailIsOther ? OtherEmailSelectValue : this.props.email
           }

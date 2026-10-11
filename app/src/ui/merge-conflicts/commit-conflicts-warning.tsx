@@ -63,7 +63,7 @@ export class CommitConflictsWarning extends React.Component<
         id="commit-conflict-markers-warning"
         onDismissed={this.onCancel}
         onSubmit={this.onSubmit}
-        title={'Confirm committing conflicted files'}
+        title={"确认提交冲突文件"}
         type={'warning'}
       >
         <DialogContent>
@@ -78,7 +78,7 @@ export class CommitConflictsWarning extends React.Component<
           <OkCancelButtonGroup
             destructive={true}
             okButtonText={
-              __DARWIN__ ? 'Yes, Commit Files' : 'Yes, commit files'
+              __DARWIN__ ? 'Yes, Commit Files' : "确定，提交文件"
             }
           />
         </DialogFooter>

@@ -72,7 +72,7 @@ export function getRelativeTimeInfoFromDate(
   } else if (duration < MINUTE) {
     return {
       absoluteText,
-      relativeText: 'just now',
+      relativeText: "此刻",
       duration: MINUTE - duration,
     }
   } else if (duration < HOUR) {
@@ -88,7 +88,7 @@ export function getRelativeTimeInfoFromDate(
       // More than a week ago, just the date will suffice
       return {
         absoluteText,
-        relativeText: formatDate(then, { time: false, dateStyle: 'medium' }),
+        relativeText: formatDate(then, { dateStyle: 'medium' }),
       }
     }
   }

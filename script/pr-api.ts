@@ -17,7 +17,7 @@ export function fetchPR(id: number): IAPIPR | null {
     )
 
     return JSON.parse(response)
-  } catch {
+  } catch (e) {
     return null
   }
 }
@@ -44,7 +44,7 @@ export function createPR(
       headRefName: branch,
       url,
     }
-  } catch {
+  } catch (e) {
     return null
   }
 }

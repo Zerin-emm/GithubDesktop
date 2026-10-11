@@ -187,7 +187,7 @@ describe('git/rebase', () => {
 async function resolveAndContinue(
   repository: Repository,
   strategy: ManualConflictResolution,
-  progressCallback: (progress: IMultiCommitOperationProgress) => void
+  progressCb: (progress: IMultiCommitOperationProgress) => void
 ) {
   const status = await getStatus(repository)
   const files = status?.workingDirectory.files ?? []
@@ -199,7 +199,5 @@ async function resolveAndContinue(
     }
   }
 
-  return continueRebase(repository, files, resolutions, {
-    progressCallback,
-  })
+  return continueRebase(repository, files, resolutions, progressCb)
 }

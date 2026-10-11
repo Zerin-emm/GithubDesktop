@@ -99,7 +99,7 @@ export class CommitDragElement extends React.Component<
         const commitsBeingSquashedCount = this.props.selectedCommits.length + 1
         toolTipContents = (
           <>
-            <span>Squash {commitsBeingSquashedCount} commits</span>
+            <span>Squash {commitsBeingSquashedCount} 多项提交</span>
           </>
         )
         break
@@ -191,7 +191,6 @@ export class CommitDragElement extends React.Component<
             emoji={emoji}
             showUnpushedIndicator={false}
             accounts={this.props.accounts}
-            preferAbsoluteDates={false}
           />
         </div>
         {this.renderDragToolTip()}

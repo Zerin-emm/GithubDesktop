@@ -1,35 +1,35 @@
 const RestrictedFileExtensions = ['.cmd', '.exe', '.bat', '.sh']
 export const CopyFilePathLabel = __DARWIN__
   ? 'Copy File Path'
-  : 'Copy file path'
+  : "复制文件路径"
 
 export const CopyRelativeFilePathLabel = __DARWIN__
   ? 'Copy Relative File Path'
-  : 'Copy relative file path'
+  : "复制文件相对路径"
 
-export const CopySelectedPathsLabel = __DARWIN__ ? 'Copy Paths' : 'Copy paths'
+export const CopySelectedPathsLabel = __DARWIN__ ? 'Copy Paths' : "复制路径"
 
 export const CopySelectedRelativePathsLabel = __DARWIN__
   ? 'Copy Relative Paths'
-  : 'Copy relative paths'
+  : "复制相对路径"
 
 export const DefaultEditorLabel = __DARWIN__
   ? 'Open in External Editor'
-  : 'Open in external editor'
+  : "打开于 external editor"
 
-export const DefaultShellLabel = __DARWIN__ ? 'Open in Shell' : 'Open in shell'
+export const DefaultShellLabel = __DARWIN__ ? 'Open in Shell' : "打开于 shell"
 
 export const RevealInFileManagerLabel = __DARWIN__
   ? 'Reveal in Finder'
   : __WIN32__
-  ? 'Show in Explorer'
+  ? "在资源管理器中显示"
   : 'Show in your File Manager'
 
-export const TrashNameLabel = __WIN32__ ? 'Recycle Bin' : 'Trash'
+export const TrashNameLabel = __WIN32__ ? "回收站" : 'Trash'
 
 export const OpenWithDefaultProgramLabel = __DARWIN__
   ? 'Open with Default Program'
-  : 'Open with default program'
+  : "使用默认程序打开"
 
 export function isSafeFileExtension(extension: string): boolean {
   if (__WIN32__) {

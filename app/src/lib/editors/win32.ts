@@ -7,7 +7,7 @@ import {
   RegistryValue,
   RegistryValueType,
 } from 'registry-js'
-import { pathExists } from '../path-exists'
+import { pathExists } from '../../ui/lib/path-exists'
 
 import { IFoundEditor } from './found-editor'
 import memoizeOne from 'memoize-one'
@@ -390,11 +390,7 @@ const editors: WindowsExternalEditor[] = [
   },
   {
     name: 'RStudio',
-    registryKeys: [
-      CurrentUserUninstallKey('RStudio'),
-      LocalMachineUninstallKey('RStudio'),
-      Wow64LocalMachineUninstallKey('RStudio'),
-    ],
+    registryKeys: [Wow64LocalMachineUninstallKey('RStudio')],
     installLocationRegistryKey: 'DisplayIcon',
     displayNamePrefixes: ['RStudio'],
     publishers: ['RStudio', 'Posit Software'],
@@ -486,8 +482,6 @@ const editors: WindowsExternalEditor[] = [
     registryKeys: [
       CurrentUserUninstallKey('62625861-8486-5be9-9e46-1da50df5f8ff'),
       CurrentUserUninstallKey('{DADADADA-ADAD-ADAD-ADAD-ADADADADADAD}}_is1'),
-      // ARM64 version of Cursor
-      CurrentUserUninstallKey('{DBDBDBDB-BDBD-BDBD-BDBD-BDBDBDBDBDBD}}_is1'),
     ],
     installLocationRegistryKey: 'DisplayIcon',
     displayNamePrefixes: ['Cursor', 'Cursor (User)'],
@@ -501,15 +495,6 @@ const editors: WindowsExternalEditor[] = [
     installLocationRegistryKey: 'DisplayIcon',
     displayNamePrefixes: ['Windsurf', 'Windsurf (User)'],
     publishers: ['Codeium'],
-  },
-  {
-    name: 'Zed',
-    registryKeys: [
-      CurrentUserUninstallKey('{2DB0DA96-CA55-49BB-AF4F-64AF36A86712}_is1'),
-    ],
-    installLocationRegistryKey: 'DisplayIcon',
-    displayNamePrefixes: ['Zed'],
-    publishers: ['Zed Industries'],
   },
 ]
 
@@ -570,24 +555,14 @@ async function findApplication(editor: WindowsExternalEditor) {
 }
 
 const getJetBrainsToolboxEditors = memoizeOne(async () => {
-  const re = /^JetBrains Toolbox \(.*\)/
+  const re = /^JetBrains Toolbox \((.*)\)/
   const editors = new Array<WindowsExternalEditor>()
 
   for (const parent of [uninstallSubKey, wow64UninstallSubKey]) {
     for (const key of enumerateKeys(HKEY.HKEY_CURRENT_USER, parent)) {
       const m = re.exec(key)
       if (m) {
-        // Get DisplayName value directly, since it doesn't always match what is between () in the /JetBrains Toolbox (...)/ regex
-        const displayName = getKeyOrEmpty(
-          enumerateValues(HKEY.HKEY_CURRENT_USER, `${parent}\\${key}`),
-          'DisplayName'
-        )
-        if (!displayName) {
-          log.debug(`Missing DisplayName for registry key ${parent}\\${key}`)
-          continue
-        }
-
-        const [name] = m
+        const [name, product] = m
         editors.push({
           name,
           installLocationRegistryKey: 'DisplayIcon',
@@ -597,7 +572,7 @@ const getJetBrainsToolboxEditors = memoizeOne(async () => {
               subKey: `${parent}\\${key}`,
             },
           ],
-          displayNamePrefixes: [displayName],
+          displayNamePrefixes: [product],
           publishers: ['JetBrains s.r.o.'],
         })
       }

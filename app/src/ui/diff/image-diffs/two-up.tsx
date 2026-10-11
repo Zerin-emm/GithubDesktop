@@ -45,7 +45,7 @@ export class TwoUp extends React.Component<ITwoUpProps, {}> {
               <span className="strong">W:</span> {previousImageSize.width}
               px | <span className="strong">H:</span> {previousImageSize.height}
               px | <span className="strong">Size:</span>{' '}
-              {formatBytes(previous.bytes, 2)}
+              {formatBytes(previous.bytes, 2, false)}
             </div>
           </div>
 
@@ -60,7 +60,7 @@ export class TwoUp extends React.Component<ITwoUpProps, {}> {
               <span className="strong">W:</span> {currentImageSize.width}
               px | <span className="strong">H:</span> {currentImageSize.height}
               px | <span className="strong">Size:</span>{' '}
-              {formatBytes(current.bytes, 2)}
+              {formatBytes(current.bytes, 2, false)}
             </div>
           </div>
         </div>
@@ -73,7 +73,11 @@ export class TwoUp extends React.Component<ITwoUpProps, {}> {
             })}
           >
             {diffBytes !== 0
-              ? `${diffBytesSign}${formatBytes(diffBytes, 2)} (${diffPercent})`
+              ? `${diffBytesSign}${formatBytes(
+                  diffBytes,
+                  2,
+                  false
+                )} (${diffPercent})`
               : 'No size difference'}
           </span>
         </div>

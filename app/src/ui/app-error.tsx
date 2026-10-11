@@ -7,7 +7,7 @@ import {
   DefaultDialogFooter,
 } from './dialog'
 import { dialogTransitionTimeout } from './app'
-import { GitError, isAuthFailureError } from '../lib/git/core'
+import { coerceToString, GitError, isAuthFailureError } from '../lib/git/core'
 import { Popup, PopupType } from '../models/popup'
 import { OkCancelButtonGroup } from './dialog/ok-cancel-button-group'
 import { ErrorWithMetadata } from '../lib/error-with-metadata'
@@ -16,9 +16,7 @@ import { Ref } from './lib/ref'
 import { GitError as DugiteError } from 'dugite'
 import { LinkButton } from './lib/link-button'
 import { getFileFromExceedsError } from '../lib/helpers/regex'
-import { CopilotError, getCopilotErrorDisplayInfo } from '../lib/copilot-error'
-import { Terminal } from './terminal'
-import { coerceToString } from '../lib/git/coerce-to-string'
+import { ApiError } from '../lib/api-error'
 
 interface IAppErrorProps {
   /** The error to be displayed  */
@@ -97,7 +95,7 @@ export class AppError extends React.Component<IAppErrorProps, IAppErrorState> {
     // If the error message is just the raw git output, display it in
     // fixed-width font
     if (isRawGitError(e)) {
-      return <Terminal terminalOutput={e.message} rows={15} cols={80} />
+      return <p className="monospace">{e.message}</p>
     }
 
     if (
@@ -127,39 +125,20 @@ export class AppError extends React.Component<IAppErrorProps, IAppErrorState> {
       )
     }
 
-    if (e instanceof CopilotError) {
-      const displayInfo = getCopilotErrorDisplayInfo(e)
-      if (displayInfo !== null) {
-        const { actionText, actionURL, message, retryAfterMessage } =
-          displayInfo
-
-        return (
-          <>
-            <p>{message}</p>
-            {retryAfterMessage !== undefined ? (
-              <p>{retryAfterMessage}</p>
-            ) : null}
-            {actionText !== undefined && actionURL !== undefined ? (
-              <p>
-                <LinkButton uri={actionURL}>{actionText}</LinkButton>
-              </p>
-            ) : null}
-          </>
-        )
-      }
+    if (isApiQuotaExceededError(e)) {
+      return (
+        <>
+          <p>{e.message}</p>
+        </>
+      )
     }
 
     return <p>{e.message}</p>
   }
 
   private getTitle(error: Error) {
-    const underlyingError = getUnderlyingError(error)
-
-    if (underlyingError instanceof CopilotError) {
-      const displayInfo = getCopilotErrorDisplayInfo(underlyingError)
-      if (displayInfo !== null) {
-        return displayInfo.title
-      }
+    if (isApiQuotaExceededError(error)) {
+      return 'API 配额已用尽'
     }
 
     switch (getDugiteError(error)) {
@@ -179,8 +158,6 @@ export class AppError extends React.Component<IAppErrorProps, IAppErrorState> {
       switch (gitContext?.kind) {
         case 'create-repository':
           return `Failed creating repository`
-        case 'commit':
-          return `Commit failed`
       }
     }
 
@@ -260,7 +237,7 @@ export class AppError extends React.Component<IAppErrorProps, IAppErrorState> {
     return (
       <DialogFooter>
         <OkCancelButtonGroup
-          okButtonText={__DARWIN__ ? 'Retry Clone' : 'Retry clone'}
+          okButtonText={__DARWIN__ ? 'Retry Clone' : "重试克隆"}
           onOkButtonClick={this.onRetryAction}
           onCancelButtonClick={this.onCloseButtonClick}
         />
@@ -272,9 +249,9 @@ export class AppError extends React.Component<IAppErrorProps, IAppErrorState> {
     return (
       <DialogFooter>
         <OkCancelButtonGroup
-          okButtonText="Close"
+          okButtonText="关闭"
           onOkButtonClick={this.onCloseButtonClick}
-          cancelButtonText={__DARWIN__ ? 'Open Preferences' : 'Open options'}
+          cancelButtonText={__DARWIN__ ? 'Open Preferences' : "打开选项"}
           onCancelButtonClick={this.showPreferencesDialog}
         />
       </DialogFooter>
@@ -320,19 +297,19 @@ export class AppError extends React.Component<IAppErrorProps, IAppErrorState> {
   }
 }
 
-export function getUnderlyingError(error: Error): Error {
+function getUnderlyingError(error: Error): Error {
   return isErrorWithMetaData(error) ? error.underlyingError : error
 }
 
-export function isErrorWithMetaData(error: Error): error is ErrorWithMetadata {
+function isErrorWithMetaData(error: Error): error is ErrorWithMetadata {
   return error instanceof ErrorWithMetadata
 }
 
-export function isGitError(error: Error): error is GitError {
+function isGitError(error: Error): error is GitError {
   return error instanceof GitError
 }
 
-export function isRawGitError(error: Error | null) {
+function isRawGitError(error: Error | null) {
   if (!error) {
     return false
   }
@@ -354,6 +331,15 @@ function getRetryActionType(error: Error) {
   }
 
   return error.metadata.retryAction?.type
+}
+
+function isApiQuotaExceededError(error: Error) {
+  const e = getUnderlyingError(error)
+
+  if (e instanceof ApiError) {
+    return e.isQuotaExceededError
+  }
+  return false
 }
 
 function getDugiteError(error: Error) {

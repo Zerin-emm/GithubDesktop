@@ -24,7 +24,7 @@ import { Commit, ICommitContext } from '../../models/commit'
 import { startTimer } from '../lib/timing'
 import { CommitWarning, CommitWarningIcon } from './commit-warning'
 import { LinkButton } from '../lib/link-button'
-import { CommitOptions, Foldout, FoldoutType } from '../../lib/app-state'
+import { Foldout, FoldoutType } from '../../lib/app-state'
 import { IAvatarUser, getAvatarUserFromAuthor } from '../../models/avatar'
 import { showContextualMenu } from '../../lib/menu-item'
 import { Account, isEnterpriseAccount } from '../../models/account'
@@ -62,15 +62,8 @@ import { formatCommitMessage } from '../../lib/format-commit-message'
 import { useRepoRulesLogic } from '../../lib/helpers/repo-rules'
 import { isDotCom } from '../../lib/endpoint-capabilities'
 import { WorkingDirectoryFileChange } from '../../models/status'
-import {
-  enableCommitMessageGeneration,
-  enableCopilotSdkCommitMessageGeneration,
-  enableHooksEnvironment,
-} from '../../lib/feature-flag'
-import { getAccountForCommitMessageGeneration } from '../../lib/get-account-for-repository'
 import { AriaLiveContainer } from '../accessibility/aria-live-container'
-import { HookProgress } from '../../lib/git'
-import { assertNever } from '../../lib/fatal-error'
+import { isApiConfigured } from '../../models/api-settings'
 
 const addAuthorIcon: OcticonSymbolVariant = {
   w: 18,
@@ -114,8 +107,6 @@ interface ICommitMessageProps {
   readonly repositoryAccount: Account | null
   readonly autocompletionProviders: ReadonlyArray<IAutocompletionProvider<any>>
   readonly isCommitting?: boolean
-  readonly hookProgress: HookProgress | null
-  readonly onShowCommitProgress: (() => void) | undefined
   readonly isGeneratingCommitMessage?: boolean
   readonly shouldShowGenerateCommitMessageCallOut?: boolean
   readonly commitToAmend: Commit | null
@@ -178,8 +169,6 @@ interface ICommitMessageProps {
     mustOverrideExistingMessage: boolean
   ) => void
 
-  readonly onCancelGenerateCommitMessage?: () => void
-
   /**
    * Called when the component has given the commit message focus due to
    * `focusCommitMessage` being set. Used to reset the `focusCommitMessage`
@@ -205,39 +194,6 @@ interface ICommitMessageProps {
   /** Optional to add an id to a message that should be provided as an aria
    * description of the submit button */
   readonly submitButtonAriaDescribedBy?: string
-
-  /**
-   * Whether or not to skip blocking commit hooks when creating commits
-   * by means of passing the `--no-verify` flag to git commit
-   */
-  readonly skipCommitHooks: boolean
-
-  /**
-   * Whether or not to add a `Signed-off-by` trailer to commit messages
-   * by means of passing the `--signoff` flag to git commit
-   */
-  readonly signOffCommits: boolean
-
-  /**
-   * Whether or not to allow creating a commit without any file changes
-   * by means of passing the `--allow-empty` flag to git commit.
-   * This option resets to false after each commit.
-   */
-  readonly allowEmptyCommit: boolean
-
-  /**
-   * Whether or not to show the "Allow empty commit" option in the commit
-   * options context menu. Should be false when the CommitMessage component
-   * is used in contexts where empty commits are not applicable, such as the
-   * squash commit dialog.
-   */
-  readonly showAllowEmptyCommitOption?: boolean
-
-  /** Callback to set commit options for the given repository */
-  readonly onUpdateCommitOptions: (
-    repository: Repository,
-    options: Partial<CommitOptions>
-  ) => void
 }
 
 interface ICommitMessageState {
@@ -651,8 +607,7 @@ export class CommitMessage extends React.Component<
 
   private canCommit(): boolean {
     return (
-      (((this.props.anyFilesSelected === true ||
-        this.props.allowEmptyCommit === true) &&
+      ((this.props.anyFilesSelected === true &&
         this.state.commitMessage.summary.length > 0) ||
         this.props.prepopulateCommitSummary) &&
       !this.hasRepoRuleFailure()
@@ -854,10 +809,10 @@ export class CommitMessage extends React.Component<
     return this.props.showCoAuthoredBy
       ? __DARWIN__
         ? 'Remove Co-Authors'
-        : 'Remove co-authors'
+        : "移除合作者"
       : __DARWIN__
       ? 'Add Co-Authors'
-      : 'Add co-authors'
+      : "添加合作者"
   }
 
   private getAddRemoveCoAuthorsMenuItem(): IMenuItem {
@@ -870,44 +825,6 @@ export class CommitMessage extends React.Component<
     }
   }
 
-  private getGenerateCommitMessageMenuItem(): IMenuItem | null {
-    const {
-      accounts,
-      onGenerateCommitMessage,
-      filesSelected,
-      isCommitting,
-      isGeneratingCommitMessage,
-      commitToAmend,
-    } = this.props
-
-    if (
-      !accounts.some(enableCommitMessageGeneration) ||
-      onGenerateCommitMessage === undefined
-    ) {
-      return null
-    }
-
-    const noFilesSelected = filesSelected.length === 0
-    const noChangesAvailable = !commitToAmend && noFilesSelected
-
-    return {
-      label: __DARWIN__
-        ? 'Generate Commit Message with Copilot'
-        : 'Generate commit message with Copilot',
-      action: () => {
-        const { commitMessage } = this.state
-        onGenerateCommitMessage(
-          filesSelected,
-          !!commitMessage.summary || !!commitMessage.description
-        )
-      },
-      enabled:
-        isCommitting !== true &&
-        !isGeneratingCommitMessage &&
-        !noChangesAvailable,
-    }
-  }
-
   private onContextMenu = (event: React.MouseEvent<HTMLDivElement>) => {
     if (
       event.target instanceof HTMLTextAreaElement ||
@@ -916,29 +833,16 @@ export class CommitMessage extends React.Component<
       return
     }
 
-    const items: IMenuItem[] = [this.getAddRemoveCoAuthorsMenuItem()]
-
-    const generateMenuItem = this.getGenerateCommitMessageMenuItem()
-    if (generateMenuItem) {
-      items.push(generateMenuItem)
-    }
-
-    showContextualMenu(items)
+    showContextualMenu([this.getAddRemoveCoAuthorsMenuItem()])
   }
 
   private onAutocompletingInputContextMenu = () => {
-    const items: IMenuItem[] = [this.getAddRemoveCoAuthorsMenuItem()]
-
-    const generateMenuItem = this.getGenerateCommitMessageMenuItem()
-    if (generateMenuItem) {
-      items.push(generateMenuItem)
-    }
-
-    items.push(
+    const items: IMenuItem[] = [
+      this.getAddRemoveCoAuthorsMenuItem(),
       { type: 'separator' },
       { role: 'editMenu' },
-      { type: 'separator' }
-    )
+      { type: 'separator' },
+    ]
 
     items.push(
       this.getCommitSpellcheckEnabilityMenuItem(
@@ -952,7 +856,7 @@ export class CommitMessage extends React.Component<
   private getCommitSpellcheckEnabilityMenuItem(isEnabled: boolean): IMenuItem {
     const enableLabel = __DARWIN__
       ? 'Enable Commit Spellcheck'
-      : 'Enable commit spellcheck'
+      : "禁用提交时的拼写检查"
     const disableLabel = __DARWIN__
       ? 'Disable Commit Spellcheck'
       : 'Disable commit spellcheck'
@@ -966,14 +870,6 @@ export class CommitMessage extends React.Component<
     e: React.MouseEvent<HTMLButtonElement>
   ) => {
     e.preventDefault()
-
-    if (this.props.isGeneratingCommitMessage) {
-      if (this.canCancelGenerateCommitMessage) {
-        this.props.onCancelGenerateCommitMessage?.()
-      }
-      return
-    }
-
     const { commitMessage } = this.state
 
     this.props.onGenerateCommitMessage?.(
@@ -991,11 +887,8 @@ export class CommitMessage extends React.Component<
   }
 
   private renderCopilotButton() {
-    if (!this.isCopilotButtonEnabled) {
-      return null
-    }
-
     const {
+      onGenerateCommitMessage,
       filesSelected,
       isCommitting,
       isGeneratingCommitMessage,
@@ -1003,25 +896,26 @@ export class CommitMessage extends React.Component<
       shouldShowGenerateCommitMessageCallOut,
     } = this.props
 
+    if (
+      !isApiConfigured() ||
+      onGenerateCommitMessage === undefined
+    ) {
+      return null
+    }
+
     const noFilesSelected = filesSelected.length === 0
     const noChangesAvailable = !commitToAmend && noFilesSelected
 
-    let ariaLabel = 'Generate commit message with Copilot'
-    const canCancelGenerateCommitMessage = this.canCancelGenerateCommitMessage
-    const showCancelGenerateCommitMessage =
-      isGeneratingCommitMessage === true && canCancelGenerateCommitMessage
-
-    if (!isGeneratingCommitMessage && noChangesAvailable) {
-      ariaLabel += '. Files must be selected to generate a commit message.'
-    } else if (showCancelGenerateCommitMessage) {
-      ariaLabel = 'Cancel generating commit details'
-    } else if (isGeneratingCommitMessage) {
-      ariaLabel = 'Generating commit details…'
-    }
+    const ariaLabel = isGeneratingCommitMessage
+      ? '正在生成提交信息'
+      : '用自定义 API 生成提交信息' +
+        (noChangesAvailable
+          ? '。需要先选择文件才能生成提交信息。'
+          : '')
 
     return (
       <>
-        {this.isCoAuthorInputEnabled && <div className="separator" />}
+        <div className="separator" />
         <Button
           className="copilot-button"
           onClick={this.onCopilotButtonClick}
@@ -1029,103 +923,22 @@ export class CommitMessage extends React.Component<
           tooltip={ariaLabel}
           disabled={
             isCommitting === true ||
-            (isGeneratingCommitMessage === true &&
-              !canCancelGenerateCommitMessage) ||
-            (!isGeneratingCommitMessage && noChangesAvailable)
+            isGeneratingCommitMessage ||
+            noChangesAvailable
           }
         >
           <AriaLiveContainer
             message={
-              isGeneratingCommitMessage ? 'Generating commit details…' : ''
+              isGeneratingCommitMessage ? "正在生成提交信息…" : ''
             }
           />
-          <Octicon
-            symbol={
-              showCancelGenerateCommitMessage
-                ? octicons.squareCircle
-                : octicons.copilot
-            }
-          />
+          <Octicon symbol={octicons.sparkleFill} />
           {shouldShowGenerateCommitMessageCallOut && (
-            <span className="call-to-action-bubble">New</span>
+            <span className="call-to-action-bubble">新建</span>
           )}
         </Button>
       </>
     )
-  }
-
-  private renderCommitOptionsButton() {
-    const ariaLabel = 'Configure commit options'
-
-    return (
-      <>
-        {(this.isCoAuthorInputEnabled || this.isCopilotButtonEnabled) && (
-          <div className="separator" />
-        )}
-        <Button
-          className={classNames('commit-options-button', {
-            'default-options':
-              !this.props.skipCommitHooks &&
-              !this.props.signOffCommits &&
-              !this.props.allowEmptyCommit,
-          })}
-          onClick={this.onCommitOptionsButtonClick}
-          ariaLabel={ariaLabel}
-          tooltip={ariaLabel}
-        >
-          <Octicon symbol={octicons.gear} />
-        </Button>
-      </>
-    )
-  }
-
-  private onCommitOptionsButtonClick = (
-    e: React.MouseEvent<HTMLButtonElement>
-  ) => {
-    e.preventDefault()
-
-    const items: IMenuItem[] = []
-
-    if (enableHooksEnvironment()) {
-      items.push({
-        type: 'checkbox',
-        checked: this.props.skipCommitHooks,
-        label: __DARWIN__ ? 'Bypass Commit Hooks' : 'Bypass Commit hooks',
-        action: () => {
-          this.props.onUpdateCommitOptions(this.props.repository, {
-            skipCommitHooks: !this.props.skipCommitHooks,
-          })
-        },
-      })
-    }
-
-    items.push({
-      type: 'checkbox',
-      checked: this.props.signOffCommits,
-      label: __DARWIN__
-        ? 'Add Signed-off-by Trailer'
-        : 'Add Signed-off-by trailer',
-      action: () => {
-        this.props.onUpdateCommitOptions(this.props.repository, {
-          signOffCommits: !this.props.signOffCommits,
-        })
-      },
-    })
-
-    if (this.props.showAllowEmptyCommitOption) {
-      items.push({
-        type: 'checkbox',
-        checked: this.props.allowEmptyCommit,
-        label: __DARWIN__ ? 'Allow Empty Commit' : 'Allow empty commit',
-        action: () => {
-          this.props.onUpdateCommitOptions(this.props.repository, {
-            allowEmptyCommit: !this.props.allowEmptyCommit,
-          })
-        },
-      })
-    }
-
-    showContextualMenu(items)
   }
 
   private renderCoAuthorToggleButton() {
@@ -1206,33 +1019,17 @@ export class CommitMessage extends React.Component<
   }
 
   /**
-   * Whether the Copilot button should be available
+   * Whether or not there's anything to render in the action bar
    */
-  private get isCopilotButtonEnabled() {
-    const { accounts, onGenerateCommitMessage } = this.props
-    return (
-      accounts.some(enableCommitMessageGeneration) &&
-      onGenerateCommitMessage !== undefined
-    )
-  }
-
-  /**
-   * Whether an in-flight commit message generation can be cancelled.
-   */
-  private get canCancelGenerateCommitMessage() {
-    const account = getAccountForCommitMessageGeneration(
-      this.props.accounts,
-      this.props.repository
-    )
-
-    return (
-      account !== undefined &&
-      enableCopilotSdkCommitMessageGeneration(account) &&
-      this.props.onCancelGenerateCommitMessage !== undefined
-    )
+  private get isActionBarEnabled() {
+    return this.isCoAuthorInputEnabled
   }
 
   private renderActionBar() {
+    if (!this.isCoAuthorInputEnabled) {
+      return null
+    }
+
     const { isCommitting, isGeneratingCommitMessage } = this.props
 
     const className = classNames('action-bar', {
@@ -1243,7 +1040,6 @@ export class CommitMessage extends React.Component<
       <div className={className}>
         {this.renderCoAuthorToggleButton()}
         {this.renderCopilotButton()}
-        {this.renderCommitOptionsButton()}
       </div>
     )
   }
@@ -1254,11 +1050,11 @@ export class CommitMessage extends React.Component<
     if (commitToAmend !== null) {
       return (
         <CommitWarning icon={CommitWarningIcon.Information}>
-          Your changes will modify your <strong>most recent commit</strong>.{' '}
+          你的更改将修改 <strong>最近一次提交</strong>.{' '}
           <LinkButton onClick={this.props.onStopAmending}>
-            Stop amending
+            停止修补
           </LinkButton>{' '}
-          to make these changes as a new commit.
+          以将这些更改作为新提交。
         </CommitWarning>
       )
     } else {
@@ -1334,10 +1130,9 @@ export class CommitMessage extends React.Component<
     if (showNoWriteAccess) {
       return (
         <CommitWarning icon={CommitWarningIcon.Warning}>
-          You don't have write access to <strong>{repository.name}</strong>.
-          Want to{' '}
+          你没有对 <strong>{repository.name}</strong> 的写入权限。想要{' '}
           <LinkButton onClick={this.props.onShowCreateForkDialog}>
-            create a fork
+            创建 Fork
           </LinkButton>
           ?
         </CommitWarning>
@@ -1353,8 +1148,8 @@ export class CommitMessage extends React.Component<
 
       return (
         <CommitWarning icon={CommitWarningIcon.Warning}>
-          <strong>{branch}</strong> is a protected branch. Want to{' '}
-          <LinkButton onClick={this.onSwitchBranch}>switch branches</LinkButton>
+          <strong>{branch}</strong>  是受保护的分支。想要{' '}
+          <LinkButton onClick={this.onSwitchBranch}>切换分支</LinkButton>
           ?
         </CommitWarning>
       )
@@ -1365,20 +1160,20 @@ export class CommitMessage extends React.Component<
         <CommitWarning
           icon={canBypass ? CommitWarningIcon.Warning : CommitWarningIcon.Error}
         >
-          The branch name <strong>{branch}</strong> fails{' '}
+          分支名 <strong>{branch}</strong> 未能通过{' '}
           <RepoRulesetsForBranchLink
             repository={repository.gitHubRepository}
             branch={branch}
           >
-            one or more rules
+            一项或多项规则
           </RepoRulesetsForBranchLink>{' '}
-          that {canBypass ? 'would' : 'will'} prevent it from being published
+          这些规则 {canBypass ? 'would' : 'will'} 的检查,因而无法发布 ⚠
           {canBypass && ', but you can bypass them. Proceed with caution!'}
           {!canBypass && (
             <>
-              . Want to{' '}
+               的写入权限。想要{' '}
               <LinkButton onClick={this.onSwitchBranch}>
-                switch branches
+                切换分支
               </LinkButton>
               ?
             </>
@@ -1396,14 +1191,13 @@ export class CommitMessage extends React.Component<
             repository={repository.gitHubRepository}
             branch={branch}
           >
-            One or more rules
+            一项或多项规则
           </RepoRulesetsForBranchLink>{' '}
-          apply to the branch <strong>{branch}</strong> that require signed
-          commits
+          适用于该分支, <strong>{branch}</strong> 要求签名提交
           {canBypass && ', but you can bypass them. Proceed with caution!'}
           {!canBypass && '.'}{' '}
           <LinkButton uri="https://docs.github.com/authentication/managing-commit-signature-verification/signing-commits">
-            Learn more about commit signing.
+            了解提交签名的更多信息。
           </LinkButton>
         </CommitWarning>
       )
@@ -1418,16 +1212,16 @@ export class CommitMessage extends React.Component<
             repository={repository.gitHubRepository}
             branch={branch}
           >
-            One or more rules
+            一项或多项规则
           </RepoRulesetsForBranchLink>{' '}
-          apply to the branch <strong>{branch}</strong> that{' '}
-          {canBypass ? 'would' : 'will'} prevent pushing
+          适用于该分支, <strong>{branch}</strong> 这些规则{' '}
+          {canBypass ? 'would' : 'will'} 阻止推送
           {canBypass && ', but you can bypass them. Proceed with caution!'}
           {!canBypass && (
             <>
-              . Want to{' '}
+               的写入权限。想要{' '}
               <LinkButton onClick={this.onSwitchBranch}>
-                switch branches
+                切换分支
               </LinkButton>
               ?
             </>
@@ -1496,8 +1290,8 @@ export class CommitMessage extends React.Component<
   private getButtonVerb() {
     const { isCommitting, commitToAmend } = this.props
 
-    const amendVerb = isCommitting ? 'Amending' : 'Amend'
-    const commitVerb = isCommitting ? 'Committing' : 'Commit'
+    const amendVerb = isCommitting ? '正在修补' : '修补'
+    const commitVerb = isCommitting ? '正在提交' : '提交'
     const isAmending = commitToAmend !== null
 
     return isAmending ? amendVerb : commitVerb
@@ -1516,7 +1310,7 @@ export class CommitMessage extends React.Component<
      * as three separate strings "Verb" and "Count" and "to" and even tho
      * visually it was correctly adding spacings, for screen reader users it was
      * not and putting them all to together as one word. */
-    const action = `${verb} ${this.getFilesToBeCommittedButtonText()}to `
+    const action = '提交到 '
 
     return (
       <>
@@ -1526,20 +1320,6 @@ export class CommitMessage extends React.Component<
     )
   }
 
-  private getFilesToBeCommittedButtonText() {
-    const { filesToBeCommittedCount } = this.props
-
-    if (
-      filesToBeCommittedCount === undefined ||
-      filesToBeCommittedCount === 0
-    ) {
-      return ''
-    }
-
-    const pluralizedFile = filesToBeCommittedCount > 1 ? 'files' : 'file'
-
-    return `${filesToBeCommittedCount} ${pluralizedFile} `
-  }
 
   private getCommittingButtonTitle() {
     const { branch } = this.props
@@ -1549,7 +1329,7 @@ export class CommitMessage extends React.Component<
       return verb
     }
 
-    return `${verb} to ${branch}`
+    return `${verb}到 ${branch}`
   }
 
   private getButtonText() {
@@ -1572,7 +1352,7 @@ export class CommitMessage extends React.Component<
 
     const isAmending = commitToAmend !== null
     return isAmending
-      ? `${this.getButtonVerb()} last commit`
+      ? '修补上次提交'
       : this.getCommittingButtonTitle()
   }
 
@@ -1583,15 +1363,11 @@ export class CommitMessage extends React.Component<
 
     const isSummaryBlank = isEmptyOrWhitespace(this.summaryOrPlaceholder)
     if (isSummaryBlank) {
-      return `A commit summary is required to commit`
-    } else if (
-      !this.props.anyFilesSelected &&
-      this.props.anyFilesAvailable &&
-      !this.props.allowEmptyCommit
-    ) {
-      return `Select one or more files to commit`
+      return "提交时需要提交摘要"
+    } else if (!this.props.anyFilesSelected && this.props.anyFilesAvailable) {
+      return "请选择一个或多个要提交的文件"
     } else if (this.props.isCommitting) {
-      return `Committing changes…`
+      return "正在提交更改…"
     }
 
     return undefined
@@ -1608,7 +1384,7 @@ export class CommitMessage extends React.Component<
     const loading =
       isCommitting || isGeneratingCommitMessage ? <Loading /> : undefined
     const generatingCommitDetailsMessage = isGeneratingCommitMessage
-      ? 'Generating commit details…'
+      ? "正在生成提交信息…"
       : null
     const tooltip =
       generatingCommitDetailsMessage ?? this.getButtonTooltip(buttonEnabled)
@@ -1640,20 +1416,20 @@ export class CommitMessage extends React.Component<
         tooltip={
           <>
             <div className="title">
-              Great commit summaries contain fewer than 50 characters
+              好的提交摘要通常少于 50 个字符
             </div>
             <div className="description">
-              Place extra information in the description field.
+              更多信息请放在描述栏。
             </div>
           </>
         }
         ariaLiveMessage={
-          'Great commit summaries contain fewer than 50 characters. Place extra information in the description field.'
+          "优秀的提交摘要要精简. 在描述字段中放置额外信息。"
         }
         direction={TooltipDirection.NORTH}
         className="length-hint"
         tooltipClassName="length-hint-tooltip"
-        ariaLabel="Open Summary Length Info"
+        ariaLabel="打开摘要长度提示"
       >
         <Octicon symbol={octicons.lightBulb} />
       </ToggledtippedContent>
@@ -1696,43 +1472,9 @@ export class CommitMessage extends React.Component<
     )
   }
 
-  private renderCommitProgress() {
-    const { isCommitting, hookProgress, onShowCommitProgress } = this.props
-    if (!isCommitting || !hookProgress) {
-      return null
-    }
-
-    const { status, hookName } = hookProgress
-
-    const text =
-      hookName === 'pre-auto-gc' && status === 'finished'
-        ? 'Optimizing repository…'
-        : status === 'started'
-        ? `${hookName} hook running…`
-        : status === 'finished'
-        ? `${hookName} hook finished`
-        : status === 'failed'
-        ? `${hookName} hook failed`
-        : assertNever(status, `Unknown hook status: ${status}`)
-
-    const cn = classNames('commit-progress', {
-      'with-button': onShowCommitProgress !== undefined,
-    })
-    return (
-      <div className={cn}>
-        <div className="description">{text}</div>
-        {onShowCommitProgress && (
-          <Button tooltip="Show commit progress" onClick={onShowCommitProgress}>
-            <Octicon symbol={octicons.terminal} />
-          </Button>
-        )}
-      </div>
-    )
-  }
-
   public render() {
     const className = classNames('commit-message-component', {
-      'with-action-bar': true,
+      'with-action-bar': this.isActionBarEnabled,
       'with-co-authors': this.isCoAuthorInputVisible,
     })
 
@@ -1781,7 +1523,7 @@ export class CommitMessage extends React.Component<
 
           <AutocompletingInput
             required={true}
-            label={this.props.showInputLabels === true ? 'Summary' : undefined}
+            label={this.props.showInputLabels === true ? "摘要" : undefined}
             screenReaderLabel="Commit summary"
             className={summaryInputClassName}
             placeholder={placeholder}
@@ -1806,7 +1548,7 @@ export class CommitMessage extends React.Component<
         {this.state.isRuleFailurePopoverOpen && this.renderRuleFailurePopover()}
 
         {this.props.showInputLabels === true && (
-          <label htmlFor="commit-message-description">Description</label>
+          <label htmlFor="commit-message-description">描述</label>
         )}
         <FocusContainer
           className="description-focus-container"
@@ -1820,7 +1562,7 @@ export class CommitMessage extends React.Component<
                 ? 'Commit description'
                 : undefined
             }
-            placeholder="Description"
+            placeholder="描述"
             value={this.state.commitMessage.description || ''}
             onValueChanged={this.onDescriptionChanged}
             autocompletionProviders={
@@ -1844,7 +1586,6 @@ export class CommitMessage extends React.Component<
         {this.renderBranchProtectionsRepoRulesCommitWarning()}
 
         {this.renderSubmitButton()}
-        {this.renderCommitProgress()}
         <span className="sr-only" aria-live="polite" aria-atomic="true">
           {this.state.isCommittingStatusMessage}
         </span>

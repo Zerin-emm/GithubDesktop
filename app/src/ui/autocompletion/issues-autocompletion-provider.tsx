@@ -4,7 +4,6 @@ import { IssuesStore, IIssueHit } from '../../lib/stores/issues-store'
 import { Dispatcher } from '../dispatcher'
 import { GitHubRepository } from '../../models/github-repository'
 import { ThrottledScheduler } from '../lib/throttled-scheduler'
-import { TooltippedContent } from '../lib/tooltipped-content'
 
 /** The interval we should use to throttle the issues update. */
 const UpdateIssuesThrottleInterval = 1000 * 60
@@ -51,30 +50,13 @@ export class IssuesAutocompletionProvider
     return this.issuesStore.getIssuesMatching(this.repository, text)
   }
 
-  public renderItem(item: IIssueHit, selected: boolean): JSX.Element {
-    // Keyboard users never focus the list itself, they move the selection with
-    // the arrow keys while focus stays in the input, so the selected item is
-    // what stands in for focus here. There's no pointer to anchor to in that
-    // case, hence positioning the tooltip relative to the title instead.
+  public renderItem(item: IIssueHit): JSX.Element {
     return (
       <div className="issue" key={item.number}>
         <span className="number">#{item.number}</span>&nbsp;
-        <TooltippedContent
-          className="title"
-          tagName="span"
-          tooltip={item.title}
-          onlyWhenOverflowed={true}
-          ancestorFocused={selected}
-          positionRelativeToTarget={selected}
-        >
-          {item.title}
-        </TooltippedContent>
+        <span className="title">{item.title}</span>
       </div>
     )
-  }
-
-  public getItemAriaLabel(item: IIssueHit): string {
-    return `#${item.number} ${item.title}`
   }
 
   public getCompletionText(item: IIssueHit): string {

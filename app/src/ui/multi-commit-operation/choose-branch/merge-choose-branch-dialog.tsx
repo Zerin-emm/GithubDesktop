@@ -13,7 +13,6 @@ import {
   canStartOperation,
 } from './base-choose-branch-dialog'
 import { truncateWithEllipsis } from '../../../lib/truncate-with-ellipsis'
-import { formatNumber } from '../../../lib/format-number'
 
 interface IMergeChooseBranchDialogState {
   readonly commitCount: number
@@ -90,7 +89,7 @@ export class MergeChooseBranchDialog extends React.Component<
     )
     const squashPrefix =
       this.props.operation === MultiCommitOperationKind.Squash
-        ? 'Squash and '
+        ? "压缩并"
         : null
     return (
       <>
@@ -172,7 +171,7 @@ export class MergeChooseBranchDialog extends React.Component<
   }
 
   private renderLoadingMergeMessage() {
-    return <>Checking for ability to merge automatically...</>
+    return <>正在检查允许自动合并...</>
   }
 
   private renderCleanMergeMessage(
@@ -193,11 +192,11 @@ export class MergeChooseBranchDialog extends React.Component<
     const pluralized = commitCount === 1 ? 'commit' : 'commits'
     return (
       <React.Fragment>
-        This will merge
-        <strong>{` ${formatNumber(commitCount)} ${pluralized}`}</strong>
-        {` from `}
+        这将合并
+        <strong>{` ${commitCount} ${pluralized}`}</strong>
+        {" 自 "}
         <strong>{branch.name}</strong>
-        {` into `}
+        {" 到 "}
         <strong>{currentBranch.name}</strong>
       </React.Fragment>
     )
@@ -206,7 +205,7 @@ export class MergeChooseBranchDialog extends React.Component<
   private renderInvalidMergeMessage() {
     return (
       <React.Fragment>
-        Unable to merge unrelated histories in this repository
+        无法在此仓库中合并不相关的历史记录
       </React.Fragment>
     )
   }
@@ -219,11 +218,11 @@ export class MergeChooseBranchDialog extends React.Component<
     const pluralized = count === 1 ? 'file' : 'files'
     return (
       <React.Fragment>
-        There will be
-        <strong>{` ${formatNumber(count)} conflicted ${pluralized}`}</strong>
-        {` when merging `}
+        这将会
+        <strong>{` ${count} conflicted ${pluralized}`}</strong>
+        {" 当合并时 "}
         <strong>{branch.name}</strong>
-        {` into `}
+        {" 到 "}
         <strong>{currentBranch.name}</strong>
       </React.Fragment>
     )

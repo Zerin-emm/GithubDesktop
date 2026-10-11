@@ -112,17 +112,15 @@ export function getAbsoluteUrl(endpoint: string, path: string): string {
  * @param reloadCache   - sets cache option to reload — The browser fetches
  * the resource from the remote server without first looking in the cache, but
  * then will update the cache with the downloaded resource.
- * @param signal        - Optional cancellation signal for the request.
  */
 export function request(
   endpoint: string,
   token: string | null,
   method: HTTPMethod,
   path: string,
-  jsonBody?: object,
-  customHeaders?: object,
-  reloadCache: boolean = false,
-  signal?: AbortSignal
+  jsonBody?: Object,
+  customHeaders?: Object,
+  reloadCache: boolean = false
 ): Promise<Response> {
   const url = getAbsoluteUrl(endpoint, path)
 
@@ -145,7 +143,6 @@ export function request(
     headers,
     method,
     body: JSON.stringify(jsonBody),
-    signal,
   }
 
   if (reloadCache) {
@@ -174,7 +171,7 @@ export async function parsedResponse<T>(response: Response): Promise<T> {
     // general API error.
     try {
       apiError = await deserialize<IAPIError>(response)
-    } catch {
+    } catch (e) {
       throw new APIError(response, null)
     }
 

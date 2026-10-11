@@ -28,21 +28,19 @@ export class ChangeRepositoryAlias extends React.Component<
 
   public render() {
     const repository = this.props.repository
-    const verb = repository.alias === null ? 'Create' : 'Change'
+    const verb = repository.alias === null ? '创建' : '更改'
 
     return (
       <Dialog
         id="change-repository-alias"
-        title={
-          __DARWIN__ ? `${verb} Repository Alias` : `${verb} repository alias`
-        }
+        title={`${verb}仓库别名`}
         ariaDescribedBy="change-repository-alias-description"
         onDismissed={this.props.onDismissed}
         onSubmit={this.changeAlias}
       >
         <DialogContent>
           <p id="change-repository-alias-description">
-            Choose a new alias for the repository "{nameOf(repository)}".{' '}
+            请输入别名，此别名对应的存储库是 "{nameOf(repository)}"。{' '}
           </p>
           <p>
             <TextBox
@@ -53,14 +51,14 @@ export class ChangeRepositoryAlias extends React.Component<
           </p>
           {repository.gitHubRepository !== null && (
             <p className="description">
-              This will not affect the original repository name on GitHub.
+              这不会影响 GitHub 上的原始仓库名称。
             </p>
           )}
         </DialogContent>
 
         <DialogFooter>
           <OkCancelButtonGroup
-            okButtonText={__DARWIN__ ? `${verb} Alias` : `${verb} alias`}
+            okButtonText={`${verb}别名`}
             okButtonDisabled={this.state.newAlias.length === 0}
           />
         </DialogFooter>

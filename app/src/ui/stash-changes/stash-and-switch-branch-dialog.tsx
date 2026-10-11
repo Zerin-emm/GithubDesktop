@@ -59,7 +59,7 @@ export class StashAndSwitchBranch extends React.Component<
     return (
       <Dialog
         id="stash-changes"
-        title={__DARWIN__ ? 'Switch Branch' : 'Switch branch'}
+        title={__DARWIN__ ? 'Switch Branch' : "选择分支"}
         onSubmit={this.onSubmit}
         onDismissed={this.props.onDismissed}
         loading={isStashingChanges}
@@ -71,7 +71,7 @@ export class StashAndSwitchBranch extends React.Component<
         </DialogContent>
         <DialogFooter>
           <OkCancelButtonGroup
-            okButtonText={__DARWIN__ ? 'Switch Branch' : 'Switch branch'}
+            okButtonText={__DARWIN__ ? 'Switch Branch' : "选择分支"}
           />
         </DialogFooter>
       </Dialog>
@@ -100,12 +100,12 @@ export class StashAndSwitchBranch extends React.Component<
       {
         title: `Leave my changes on ${this.state.currentBranchName}`,
         description:
-          'Your in-progress work will be stashed on this branch for you to return to later',
+          "更改将保留在此分支",
         key: StashAction.StashOnCurrentBranch,
       },
       {
         title: `Bring my changes to ${branchToCheckout.name}`,
-        description: 'Your in-progress work will follow you to the new branch',
+        description: "更改将带到新的分支",
         key: StashAction.MoveToNewBranch,
       },
     ]
@@ -113,7 +113,7 @@ export class StashAndSwitchBranch extends React.Component<
     return (
       <Row>
         <VerticalSegmentedControl
-          label="You have changes on this branch. What would you like to do with them?"
+          label="此分支已更改。请选择下一步操作:"
           items={items}
           selectedKey={this.state.selectedStashAction}
           onSelectionChanged={this.onSelectionChanged}

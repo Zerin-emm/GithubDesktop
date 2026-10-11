@@ -62,8 +62,8 @@ export class EditorError extends React.Component<IEditorErrorProps, {}> {
       return (
         <DialogFooter>
           <OkCancelButtonGroup
-            okButtonText="Close"
-            cancelButtonText={__DARWIN__ ? 'Open Preferences' : 'Open options'}
+            okButtonText="关闭"
+            cancelButtonText={__DARWIN__ ? 'Open Preferences' : "打开选项"}
             onCancelButtonClick={this.onShowPreferencesDialog}
           />
         </DialogFooter>
@@ -72,7 +72,7 @@ export class EditorError extends React.Component<IEditorErrorProps, {}> {
       return (
         <DialogFooter>
           <OkCancelButtonGroup
-            okButtonText="Close"
+            okButtonText="关闭"
             cancelButtonText={`Download ${suggestedExternalEditor.name}`}
             onCancelButtonClick={this.onExternalLink}
           />
@@ -86,7 +86,7 @@ export class EditorError extends React.Component<IEditorErrorProps, {}> {
   public render() {
     const title = __DARWIN__
       ? 'Unable to Open External Editor'
-      : 'Unable to open external editor'
+      : "无法打开外部编辑器"
 
     return (
       <Dialog

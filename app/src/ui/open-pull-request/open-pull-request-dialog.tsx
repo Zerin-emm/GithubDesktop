@@ -116,14 +116,7 @@ export class OpenPullRequestDialog extends React.Component<IOpenPullRequestDialo
       prBaseBranches,
       prRecentBaseBranches,
     } = this.props
-    const { baseBranch, commitSelection, commitSHAs } = pullRequestState
-    if (commitSelection === null) {
-      // type checking - will render no default branch message
-      return
-    }
-
-    const { changesetData } = commitSelection
-
+    const { baseBranch, commitSHAs } = pullRequestState
     return (
       <OpenPullRequestDialogHeader
         repository={this.props.repository}
@@ -133,7 +126,6 @@ export class OpenPullRequestDialog extends React.Component<IOpenPullRequestDialo
         prBaseBranches={prBaseBranches}
         prRecentBaseBranches={prRecentBaseBranches}
         commitCount={commitSHAs?.length ?? 0}
-        changesetData={changesetData}
         onBranchChange={this.onBranchChange}
         onDismissed={this.props.onDismissed}
       />
@@ -276,7 +268,7 @@ export class OpenPullRequestDialog extends React.Component<IOpenPullRequestDialo
         <OkCancelButtonGroup
           okButtonText={okButton}
           okButtonTitle={buttonTitle}
-          cancelButtonText="Cancel"
+          cancelButtonText="取消"
           okButtonDisabled={commitSHAs === null || commitSHAs.length === 0}
         />
       </DialogFooter>

@@ -75,7 +75,6 @@ const extensionModes: ReadonlyArray<IModeDefinition> = [
     mappings: {
       '.html': 'text/html',
       '.htm': 'text/html',
-      '.astro': 'text/html',
     },
   },
   {

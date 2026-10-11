@@ -1,7 +1,9 @@
+import { uuid } from '../uuid'
+
 const trampolineTokens = new Set<string>()
 
 function requestTrampolineToken() {
-  const token = crypto.randomUUID()
+  const token = uuid()
   trampolineTokens.add(token)
   return token
 }

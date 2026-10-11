@@ -200,20 +200,14 @@ export class NotificationsStore {
       return
     }
 
-    this.statsStore.increment('pullRequestCommentNotificationCount')
-
-    const shown = await showNotification({
+    showNotification({
       title,
       body,
       userInfo: event,
       onClick,
     })
 
-    if (shown) {
-      await this.statsStore.increment(
-        'pullRequestCommentNotificationShownCount'
-      )
-    }
+    this.statsStore.increment('pullRequestCommentNotificationCount')
   }
 
   private async handlePullRequestReviewSubmitEvent(
@@ -286,20 +280,14 @@ export class NotificationsStore {
       return
     }
 
-    this.statsStore.recordPullRequestReviewNotification(review.state)
-
-    const shown = await showNotification({
+    showNotification({
       title,
       body,
       userInfo: event,
       onClick,
     })
 
-    if (shown) {
-      await this.statsStore.recordPullRequestReviewNotificationShown(
-        review.state
-      )
-    }
+    this.statsStore.recordPullRequestReviewNotificationShown(review.state)
   }
 
   private async handleChecksFailedEvent(
@@ -408,7 +396,7 @@ export class NotificationsStore {
       numberOfFailedChecks === 1 ? 'check was' : 'checks were'
 
     const shortSHA = shortenSHA(commitSHA)
-    const title = 'Pull Request checks failed'
+    const title = "拉取请求检查失败"
     const body = `${pullRequest.title} #${pullRequest.pullRequestNumber} (${shortSHA})\n${numberOfFailedChecks} ${pluralChecks} not successful.`
     const onClick = () => {
       this.statsStore.increment('checksFailedNotificationClicked')
@@ -421,18 +409,14 @@ export class NotificationsStore {
       return
     }
 
-    this.statsStore.increment('checksFailedNotificationCount')
-
-    const shown = await showNotification({
+    showNotification({
       title,
       body,
       userInfo: event,
       onClick,
     })
 
-    if (shown) {
-      await this.statsStore.increment('checksFailedNotificationShownCount')
-    }
+    this.statsStore.increment('checksFailedNotificationCount')
   }
 
   private getContributingRepository(

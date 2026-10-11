@@ -1,6 +1,6 @@
-import { beforeEach, describe, it, TestContext } from 'node:test'
+import { describe, it, TestContext } from 'node:test'
 import assert from 'node:assert'
-import { writeFile } from 'fs/promises'
+import * as FSE from 'fs-extra'
 import * as Path from 'path'
 import { exec } from 'dugite'
 
@@ -22,7 +22,6 @@ import {
 } from '../helpers/repository-scaffolding'
 import { BranchType } from '../../src/models/branch'
 import { TestStatsStore } from '../helpers/test-stats-store'
-import { isolateGitConfig } from '../helpers/git-config'
 
 describe('GitStore', () => {
   describe('loadCommitBatch', () => {
@@ -49,18 +48,18 @@ describe('GitStore', () => {
     const readmeFile = 'README.md'
     const readmeFilePath = Path.join(repo.path, readmeFile)
 
-    await writeFile(readmeFilePath, 'SOME WORDS GO HERE\n')
+    await FSE.writeFile(readmeFilePath, 'SOME WORDS GO HERE\n')
 
     const licenseFile = 'LICENSE.md'
     const licenseFilePath = Path.join(repo.path, licenseFile)
 
-    await writeFile(licenseFilePath, 'SOME WORDS GO HERE\n')
+    await FSE.writeFile(licenseFilePath, 'SOME WORDS GO HERE\n')
 
     // commit the readme file but leave the license
     await exec(['add', readmeFile], repo.path)
     await exec(['commit', '-m', 'added readme file'], repo.path)
 
-    await writeFile(readmeFilePath, 'WRITING SOME NEW WORDS\n')
+    await FSE.writeFile(readmeFilePath, 'WRITING SOME NEW WORDS\n')
     // setup requires knowing about the current tip
     await gitStore.loadStatus()
 
@@ -88,7 +87,7 @@ describe('GitStore', () => {
     const renamedFile = 'NEW-README.md'
     const filePath = Path.join(repo.path, file)
 
-    await writeFile(filePath, 'SOME WORDS GO HERE\n')
+    await FSE.writeFile(filePath, 'SOME WORDS GO HERE\n')
 
     // commit the file, and then rename it
     await exec(['add', file], repo.path)
@@ -115,7 +114,7 @@ describe('GitStore', () => {
       const file = 'README.md'
       const filePath = Path.join(repository.path, file)
 
-      await writeFile(filePath, 'SOME WORDS GO HERE\n')
+      await FSE.writeFile(filePath, 'SOME WORDS GO HERE\n')
 
       await exec(['add', file], repository.path)
       await exec(['commit', '-m', commitMessage], repository.path)
@@ -217,7 +216,7 @@ describe('GitStore', () => {
       const file = 'README.md'
       const filePath = Path.join(repo.path, file)
 
-      await writeFile(filePath, 'SOME WORDS GO HERE\n')
+      await FSE.writeFile(filePath, 'SOME WORDS GO HERE\n')
 
       let status = await getStatusOrThrow(repo)
       let files = status.workingDirectory.files
@@ -232,8 +231,6 @@ describe('GitStore', () => {
   })
 
   describe('loadBranches', () => {
-    beforeEach(isolateGitConfig)
-
     const setupRepositories = async (t: TestContext) => {
       const upstream = await setupEmptyRepository(t)
       await makeCommit(upstream, {

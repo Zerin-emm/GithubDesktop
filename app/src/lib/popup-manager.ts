@@ -1,5 +1,6 @@
 import { Popup, PopupType } from '../models/popup'
 import { sendNonFatalException } from './helpers/non-fatal-exception'
+import { uuid } from './uuid'
 
 /**
  * The limit of how many popups allowed in the stack. Working under the
@@ -36,7 +37,6 @@ const defaultPopupStackLimit = 50
  */
 export class PopupManager {
   private popupStack: ReadonlyArray<Popup> = []
-  private popupCounter = 0
 
   public constructor(private readonly popupLimit = defaultPopupStackLimit) {}
 
@@ -95,7 +95,7 @@ export class PopupManager {
 
     const existingPopup = this.getPopupsOfType(popupToAdd.type)
 
-    const popup = { id: ++this.popupCounter, ...popupToAdd }
+    const popup = { id: uuid(), ...popupToAdd }
 
     if (existingPopup.length > 0) {
       log.warn(
@@ -129,11 +129,7 @@ export class PopupManager {
    * - Multiple popups of a type error.
    **/
   public addErrorPopup(error: Error): Popup {
-    const popup: Popup = {
-      id: ++this.popupCounter,
-      type: PopupType.Error,
-      error,
-    }
+    const popup: Popup = { id: uuid(), type: PopupType.Error, error }
     this.popupStack = this.popupStack.concat(popup)
     this.checkStackLength()
     return popup
@@ -205,7 +201,7 @@ export class PopupManager {
   /**
    * Removes popup from the stack by it's id
    */
-  public removePopupById(popupId: number) {
+  public removePopupById(popupId: string) {
     this.popupStack = this.popupStack.filter(p => p.id !== popupId)
   }
 }

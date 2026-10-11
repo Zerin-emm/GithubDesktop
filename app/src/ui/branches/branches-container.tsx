@@ -34,7 +34,6 @@ import { DragType, DropTargetType } from '../../models/drag-drop'
 import {
   enablePullRequestQuickView,
   enableResizingToolbarButtons,
-  enableWorktreeSupport,
 } from '../../lib/feature-flag'
 import { PullRequestQuickView } from '../pull-request-quick-view'
 import { Emoji } from '../../lib/emoji'
@@ -51,10 +50,6 @@ interface IBranchesContainerProps {
   readonly pullRequests: ReadonlyArray<PullRequest>
   readonly onRenameBranch: (branchName: string) => void
   readonly onDeleteBranch: (branchName: string) => void
-  readonly onCheckoutInNewWorktree?: (branch: Branch) => void
-
-  /** Optional callback to checkout a PR in a new worktree */
-  readonly onCheckoutPRInNewWorktree?: (pullRequest: PullRequest) => void
 
   /** The pull request associated with the current branch. */
   readonly currentPullRequest: PullRequest | null
@@ -183,10 +178,10 @@ export class BranchesContainer extends React.Component<
         <Button
           className="merge-button"
           onClick={this.onMergeClick}
-          tooltip={`Choose a branch to merge into ${currentBranch.name}`}
+          tooltip={`选择要合并到 ${currentBranch.name} 的分支`}
         >
           <Octicon className="icon" symbol={octicons.gitMerge} />
-          Choose a branch to merge into <strong>{currentBranch.name}</strong>
+          选择要合并到的分支 <strong>{currentBranch.name}</strong>
         </Button>
       </Row>
     )
@@ -213,7 +208,7 @@ export class BranchesContainer extends React.Component<
         selectedIndex={this.props.selectedTab}
         allowDragOverSwitching={true}
       >
-        <span id="branches-tab">Branches</span>
+        <span id="branches-tab">分支</span>
         <span id="pull-requests-tab" className="pull-request-tab">
           {__DARWIN__ ? 'Pull Requests' : 'Pull requests'}
           {this.renderOpenPullRequestsBubble()}
@@ -294,11 +289,6 @@ export class BranchesContainer extends React.Component<
             renderPreList={this.renderPreList}
             onRenameBranch={this.props.onRenameBranch}
             onDeleteBranch={this.props.onDeleteBranch}
-            onCheckoutInNewWorktree={
-              enableWorktreeSupport()
-                ? this.props.onCheckoutInNewWorktree
-                : undefined
-            }
           />
         )
       case BranchesTab.PullRequests: {
@@ -314,7 +304,7 @@ export class BranchesContainer extends React.Component<
       return null
     }
 
-    const label = __DARWIN__ ? 'New Branch' : 'New branch'
+    const label = __DARWIN__ ? 'New Branch' : "新建分支"
 
     return (
       /**
@@ -392,11 +382,6 @@ export class BranchesContainer extends React.Component<
         isLoadingPullRequests={this.props.isLoadingPullRequests}
         onMouseEnterPullRequest={this.onMouseEnterPullRequestListItem}
         onMouseLeavePullRequest={this.onMouseLeavePullRequestListItem}
-        onCheckoutInNewWorktree={
-          enableWorktreeSupport()
-            ? this.props.onCheckoutPRInNewWorktree
-            : undefined
-        }
       />
     )
   }

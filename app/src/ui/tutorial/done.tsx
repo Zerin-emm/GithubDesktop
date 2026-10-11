@@ -74,27 +74,27 @@ export class TutorialDone extends React.Component<ITutorialDoneProps, {}> {
           </div>
           <SuggestedActionGroup>
             <SuggestedAction
-              title="Explore projects on GitHub"
-              description="Contribute to a project that interests you"
-              buttonText={__DARWIN__ ? 'Open in Browser' : 'Open in browser'}
+              title="在 GitHub 上浏览项目"
+              description="为你感兴趣的项目做出贡献"
+              buttonText={__DARWIN__ ? 'Open in Browser' : "打开于 browser"}
               onClick={this.openDotcomExplore}
               type="normal"
               image={TelescopeOcticon}
             />
             <SuggestedAction
-              title="Create a new repository"
-              description="Get started on a brand new project"
+              title="新建存储库"
+              description="开始一个全新的项目"
               buttonText={
-                __DARWIN__ ? 'Create Repository' : 'Create repository'
+                __DARWIN__ ? 'Create Repository' : "创建存储库"
               }
               onClick={this.onCreateNewRepository}
               type="normal"
               image={PlusOcticon}
             />
             <SuggestedAction
-              title="Add a local repository"
-              description="Work on an existing project in GitHub Desktop"
-              buttonText={__DARWIN__ ? 'Add Repository' : 'Add repository'}
+              title="添加本地存储库"
+              description="在 GitHub Desktop 的一个项目上工作"
+              buttonText={__DARWIN__ ? 'Add Repository' : "添加存储库"}
               onClick={this.onAddExistingRepository}
               type="normal"
               image={FileDirectoryOcticon}

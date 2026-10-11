@@ -15,10 +15,6 @@ import { Dialog, DialogError, DialogContent, DialogFooter } from '../dialog'
 import { OkCancelButtonGroup } from '../dialog/ok-cancel-button-group'
 import { Ref } from '../lib/ref'
 import { getHTMLURL } from '../../lib/api'
-import {
-  EnterpriseServerConfirmation,
-  enterpriseServerConfirmationDescriptionId,
-} from '../lib/enterprise-server-confirmation'
 
 interface ISignInProps {
   readonly dispatcher: Dispatcher
@@ -34,9 +30,9 @@ interface ISignInState {
 
 const SignInWithBrowserTitle = __DARWIN__
   ? 'Sign in Using Your Browser'
-  : 'Sign in using your browser'
+  : "使用浏览器登录"
 
-const DefaultTitle = 'Sign in'
+const DefaultTitle = "登录"
 
 const browserSignInInfoContent = (
   <p>
@@ -126,7 +122,7 @@ export class SignIn extends React.Component<ISignInProps, ISignInState> {
     const stepKind = state.kind
     const continueWithBrowserLabel = __DARWIN__
       ? 'Continue With Browser'
-      : 'Continue with browser'
+      : "打开浏览器"
 
     switch (state.kind) {
       case SignInStep.EndpointEntry:
@@ -147,8 +143,7 @@ export class SignIn extends React.Component<ISignInProps, ISignInState> {
       <DialogFooter>
         <OkCancelButtonGroup
           okButtonText={primaryButtonText}
-          okButtonDisabled={disableSubmit || state.loading}
-          cancelButtonDisabled={false}
+          okButtonDisabled={disableSubmit}
           onCancelButtonClick={this.onDismissed}
         />
       </DialogFooter>
@@ -174,10 +169,10 @@ export class SignIn extends React.Component<ISignInProps, ISignInState> {
       <DialogContent>
         <Row>
           <TextBox
-            label="Enterprise address"
+            label="企业版地址"
             value={this.state.endpoint}
             onValueChanged={this.onEndpointChanged}
-            placeholder="https://example.ghe.com"
+            placeholder="https://github.example.com"
           />
         </Row>
       </DialogContent>
@@ -185,15 +180,6 @@ export class SignIn extends React.Component<ISignInProps, ISignInState> {
   }
 
   private renderAuthenticationStep(state: IAuthenticationState) {
-    if (state.isUnrecognizedEnterpriseServer) {
-      return (
-        <DialogContent>
-          <EnterpriseServerConfirmation endpoint={state.endpoint} />
-          {browserSignInInfoContent}
-        </DialogContent>
-      )
-    }
-
     const credentialHelperInfo =
       this.props.isCredentialHelperSignIn && this.props.credentialHelperUrl ? (
         <p>
@@ -240,34 +226,26 @@ export class SignIn extends React.Component<ISignInProps, ISignInState> {
       return null
     }
 
+    const disabled = state.loading
+
     const errors = state.error ? (
       <DialogError>{state.error.message}</DialogError>
     ) : null
 
     const title =
-      state.kind === SignInStep.Authentication
+      this.props.signInState.kind === SignInStep.Authentication
         ? SignInWithBrowserTitle
         : DefaultTitle
-
-    const confirmationDialogProps =
-      state.kind === SignInStep.Authentication &&
-      state.isUnrecognizedEnterpriseServer
-        ? {
-            role: 'alertdialog' as const,
-            ariaDescribedBy: enterpriseServerConfirmationDescriptionId,
-          }
-        : {}
 
     return (
       <Dialog
         id="sign-in"
         title={title}
-        disabled={false}
+        disabled={disabled}
         onDismissed={this.onDismissed}
         onSubmit={this.onSubmit}
         loading={state.loading}
         ref={this.dialogRef}
-        {...confirmationDialogProps}
       >
         {errors}
         {this.renderStep()}

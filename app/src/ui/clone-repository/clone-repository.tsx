@@ -12,7 +12,6 @@ import {
   IRepositoryIdentifier,
   parseRepositoryIdentifier,
   parseRemote,
-  sanitizeCloneName,
 } from '../../lib/remote-parsing'
 import { findAccountForRemoteURL } from '../../lib/find-account'
 import { API, IAPIRepository, IAPIRepositoryCloneInfo } from '../../lib/api'
@@ -265,7 +264,7 @@ export class CloneRepository extends React.Component<
     return (
       <Dialog
         className="clone-repository"
-        title={__DARWIN__ ? 'Clone a Repository' : 'Clone a repository'}
+        title={__DARWIN__ ? 'Clone a Repository' : "克隆仓库"}
         onSubmit={this.clone}
         onDismissed={this.props.onDismissed}
         loading={this.state.loading}
@@ -326,7 +325,7 @@ export class CloneRepository extends React.Component<
 
     return (
       <DialogFooter>
-        <OkCancelButtonGroup okButtonText="Clone" okButtonDisabled={disabled} />
+        <OkCancelButtonGroup okButtonText="克隆" okButtonDisabled={disabled} />
       </DialogFooter>
     )
   }
@@ -517,13 +516,13 @@ export class CloneRepository extends React.Component<
   }
 
   private renderSignIn(tab: CloneRepositoryTab) {
-    const signInTitle = __DARWIN__ ? 'Sign In' : 'Sign in'
+    const signInTitle = __DARWIN__ ? 'Sign In' : "登录"
     switch (tab) {
       case CloneRepositoryTab.DotCom:
         return (
           <CallToAction actionTitle={signInTitle} onAction={this.signInDotCom}>
             <div>
-              Sign in to your GitHub.com account to access your repositories.
+              登录你的 GitHub.com 账户以访问你的仓库。
             </div>
           </CallToAction>
         )
@@ -534,8 +533,7 @@ export class CloneRepository extends React.Component<
             onAction={this.signInEnterprise}
           >
             <div>
-              If you are using GitHub Enterprise at work, sign in to it to get
-              access to your repositories.
+              如果你在工作中使用 GitHub Enterprise,请登录以访问你的仓库。
             </div>
           </CallToAction>
         )
@@ -579,7 +577,7 @@ export class CloneRepository extends React.Component<
         this.setSelectedTabState({ error: null })
       }
     } else {
-      const pathValidation = await this.validateClonePath(path)
+      const pathValidation = await this.validateEmptyFolder(path)
 
       // We only care about the result if the path hasn't
       // changed since we went async
@@ -612,10 +610,9 @@ export class CloneRepository extends React.Component<
 
     const tabState = this.getSelectedTabState()
     const lastParsedIdentifier = tabState.lastParsedIdentifier
-    const safeName = lastParsedIdentifier
-      ? sanitizeCloneName(lastParsedIdentifier.name)
-      : null
-    const directory = safeName ? Path.join(path, safeName) : path
+    const directory = lastParsedIdentifier
+      ? Path.join(path, lastParsedIdentifier.name)
+      : path
 
     this.setSelectedTabState(
       { path: directory, error: null },
@@ -630,7 +627,7 @@ export class CloneRepository extends React.Component<
 
     const path = await showSaveDialog({
       buttonLabel: 'Select',
-      nameFieldLabel: 'Clone As:',
+      nameFieldLabel: "克隆到:",
       showsTagField: false,
       defaultPath: tabState.path ?? '',
       properties: ['createDirectory'],
@@ -656,19 +653,17 @@ export class CloneRepository extends React.Component<
       return
     }
 
-    const safeName = parsed ? sanitizeCloneName(parsed.name) : null
-
     let newPath: string
 
     const dirPath = tabState.path
     if (lastParsedIdentifier) {
-      if (safeName) {
-        newPath = Path.join(Path.dirname(dirPath), safeName)
+      if (parsed) {
+        newPath = Path.join(Path.dirname(dirPath), parsed.name)
       } else {
         newPath = Path.dirname(dirPath)
       }
-    } else if (safeName) {
-      newPath = Path.join(dirPath, safeName)
+    } else if (parsed) {
+      newPath = Path.join(dirPath, parsed.name)
     } else {
       newPath = dirPath
     }
@@ -683,20 +678,12 @@ export class CloneRepository extends React.Component<
     )
   }
 
-  /** Validate the destination before cloning can create files in it. */
-  private async validateClonePath(path: string | null): Promise<null | Error> {
+  private async validateEmptyFolder(
+    path: string | null
+  ): Promise<null | Error> {
     if (path === null) {
       return new Error(
         'Unable to read path on disk. Please check the path and try again.'
-      )
-    }
-
-    if (
-      __DARWIN__ &&
-      Path.basename(Path.resolve(path)).toLowerCase().endsWith('.app')
-    ) {
-      return new Error(
-        'The local path cannot end in .app on macOS. Choose a different folder name to avoid creating an application bundle.'
       )
     }
 
@@ -771,6 +758,7 @@ export class CloneRepository extends React.Component<
   private clone = async () => {
     this.setState({ loading: true })
 
+    const cloneInfo = await this.resolveCloneInfo()
     const { path } = this.getSelectedTabState()
 
     if (path == null) {
@@ -780,14 +768,6 @@ export class CloneRepository extends React.Component<
       return
     }
 
-    const pathError = await this.validateClonePath(path)
-    if (pathError !== null) {
-      this.setState({ loading: false })
-      this.setSelectedTabState({ error: pathError })
-      return
-    }
-
-    const cloneInfo = await this.resolveCloneInfo()
     if (!cloneInfo) {
       const error = new Error(
         `We couldn't find that repository. Check that you are logged in, the network is accessible, and the URL or repository alias are spelled correctly.`

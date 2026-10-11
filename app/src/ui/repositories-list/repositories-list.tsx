@@ -23,9 +23,9 @@ import { TooltippedContent } from '../lib/tooltipped-content'
 import memoizeOne from 'memoize-one'
 import { KeyboardShortcut } from '../keyboard-shortcut/keyboard-shortcut'
 import { generateRepositoryListContextMenu } from '../repositories-list/repository-list-item-context-menu'
-import { enableWorktreeSupport } from '../../lib/feature-flag'
 import { SectionFilterList } from '../lib/section-filter-list'
 import { assertNever } from '../../lib/fatal-error'
+import { enableMultipleEnterpriseAccounts } from '../../lib/feature-flag'
 import { IAheadBehind } from '../../models/branch'
 
 const BlankSlateImage = encodePathAsUrl(__dirname, 'static/empty-no-repo.svg')
@@ -207,12 +207,12 @@ export class RepositoriesList extends React.Component<
     return (
       <div className="repository-list-item-tooltip list-item-tooltip">
         <div>
-          <div className="label">Full Name: </div>
+          <div className="label">全名: </div>
           {realName}
           {alias && <> ({alias})</>}
         </div>
         <div>
-          <div className="label">Path: </div>
+          <div className="label">路径: </div>
           {repository.path}
         </div>
         {aheadBehindTooltip && (
@@ -243,7 +243,7 @@ export class RepositoriesList extends React.Component<
   private getGroupLabel(group: RepositoryListGroup) {
     const { kind } = group
     if (kind === 'enterprise') {
-      return group.host
+      return enableMultipleEnterpriseAccounts() ? group.host : 'Enterprise'
     } else if (kind === 'other') {
       return 'Other'
     } else if (kind === 'dotcom') {
@@ -298,12 +298,6 @@ export class RepositoriesList extends React.Component<
       onChangeRepositoryAlias: this.onChangeRepositoryAlias,
       onRemoveRepositoryAlias: this.onRemoveRepositoryAlias,
       onViewOnGitHub: this.props.onViewOnGitHub,
-      onCreateWorktree: enableWorktreeSupport()
-        ? this.onCreateWorktree
-        : undefined,
-      onShowWorktrees: enableWorktreeSupport()
-        ? this.onShowWorktrees
-        : undefined,
       repository: item.repository,
       shellLabel: this.props.shellLabel,
     })
@@ -376,7 +370,7 @@ export class RepositoriesList extends React.Component<
         ariaExpanded={this.state.newRepositoryMenuExpanded}
         onKeyDown={this.onNewRepositoryButtonKeyDown}
       >
-        Add
+        添加
         <Octicon symbol={octicons.triangleDown} />
       </Button>
     )
@@ -394,21 +388,21 @@ export class RepositoriesList extends React.Component<
     return (
       <div className="no-items no-results-found">
         <img src={BlankSlateImage} className="blankslate-image" alt="" />
-        <div className="title">Sorry, I can't find that repository</div>
+        <div className="title">抱歉,找不到该仓库</div>
 
         <div className="protip">
-          ProTip! Press{' '}
+          小技巧:按下{' '}
           <div className="kbd-shortcut">
             <KeyboardShortcut darwinKeys={['⌘', 'O']} keys={['Ctrl', 'O']} />
           </div>{' '}
-          to quickly add a local repository, and{' '}
+          即可快速添加本地仓库,{' '}
           <div className="kbd-shortcut">
             <KeyboardShortcut
               darwinKeys={['⇧', '⌘', 'O']}
               keys={['Ctrl', 'Shift', 'O']}
             />
           </div>{' '}
-          to clone from anywhere within the app
+          即可从应用内任意位置克隆
         </div>
       </div>
     )
@@ -417,17 +411,17 @@ export class RepositoriesList extends React.Component<
   private onNewRepositoryButtonClick = () => {
     const items: IMenuItem[] = [
       {
-        label: __DARWIN__ ? 'Clone Repository…' : 'Clone repository…',
+        label: __DARWIN__ ? "克隆仓库…" : "克隆仓库…",
         action: this.onCloneRepository,
       },
       {
-        label: __DARWIN__ ? 'Create New Repository…' : 'Create new repository…',
+        label: __DARWIN__ ? "创建新仓库…" : "创建新仓库…",
         action: this.onCreateNewRepository,
       },
       {
         label: __DARWIN__
-          ? 'Add Existing Repository…'
-          : 'Add existing repository…',
+          ? "添加现有仓库…"
+          : "添加现有仓库…",
         action: this.onAddExistingRepository,
       },
     ]
@@ -462,17 +456,5 @@ export class RepositoriesList extends React.Component<
 
   private onRemoveRepositoryAlias = (repository: Repository) => {
     this.props.dispatcher.changeRepositoryAlias(repository, null)
-  }
-
-  private onCreateWorktree = (repository: Repository) => {
-    this.props.dispatcher.showPopup({
-      type: PopupType.AddWorktree,
-      repository,
-    })
-  }
-
-  private onShowWorktrees = (repository: Repository) => {
-    this.props.dispatcher.selectRepository(repository)
-    this.props.dispatcher.showWorktreesFoldout()
   }
 }

@@ -276,11 +276,11 @@ export class MergeCallToActionWithConflicts extends React.Component<
 
     return (
       <div className="merge-message">
-        This will merge
+        这将合并
         <strong>{` ${this.commitCount} ${pluralized}`}</strong>
-        {` from `}
+        {" 自 "}
         <strong>{branch.name}</strong>
-        {` into `}
+        {" 到 "}
         <strong>{currentBranch.name}</strong>
       </div>
     )
@@ -297,7 +297,7 @@ export class MergeCallToActionWithConflicts extends React.Component<
 
     return (
       <div className="merge-message">
-        Unable to merge unrelated histories in this repository
+        无法在此仓库中合并不相关的历史记录
       </div>
     )
   }
@@ -310,11 +310,11 @@ export class MergeCallToActionWithConflicts extends React.Component<
     const pluralized = count === 1 ? 'file' : 'files'
     return (
       <div className="merge-message">
-        There will be
+        这将会
         <strong>{` ${count} conflicted ${pluralized}`}</strong>
-        {` when merging `}
+        {" 当合并时 "}
         <strong>{branch.name}</strong>
-        {` into `}
+        {" 到 "}
         <strong>{currentBranch.name}</strong>
       </div>
     )

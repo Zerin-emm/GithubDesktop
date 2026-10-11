@@ -20,7 +20,7 @@ import {
 import { Account } from '../../models/account'
 import { Author, UnknownAuthor } from '../../models/author'
 import { Checkbox, CheckboxValue } from '../lib/checkbox'
-import { CommitOptions, IFileListFilterState } from '../../lib/app-state'
+import { IFileListFilterState } from '../../lib/app-state'
 import {
   isSafeFileExtension,
   DefaultEditorLabel,
@@ -36,7 +36,7 @@ import { ChangedFile } from './changed-file'
 import { IAutocompletionProvider } from '../autocompletion'
 import { showContextualMenu } from '../../lib/menu-item'
 import { arrayEquals } from '../../lib/equality'
-import { writeClipboardText } from '../main-process-proxy'
+import { clipboard } from 'electron'
 import { basename } from 'path'
 import { Commit, ICommitContext } from '../../models/commit'
 import {
@@ -73,8 +73,6 @@ import {
   applyFilters,
 } from './filter-changes-logic'
 import { ChangesListFilterOptions } from './changes-list-filter-options'
-import { HookProgress } from '../../lib/git'
-import { formatNumber } from '../../lib/format-number'
 
 export interface IChangesListItem extends IFilterListItem {
   readonly id: string
@@ -159,8 +157,6 @@ interface IFilterChangesListProps {
   readonly dispatcher: Dispatcher
   readonly availableWidth: number
   readonly isCommitting: boolean
-  readonly hookProgress: HookProgress | null
-  readonly onShowCommitProgress?: (() => void) | undefined
   readonly isGeneratingCommitMessage: boolean
   readonly shouldShowGenerateCommitMessageCallOut: boolean
   readonly commitToAmend: Commit | null
@@ -223,31 +219,6 @@ interface IFilterChangesListProps {
 
   /** Whether or not to show the changes filter */
   readonly showChangesFilter: boolean
-
-  /**
-   * Whether or not to skip blocking commit hooks when creating commits
-   * by means of passing the `--no-verify` flag to git commit
-   */
-  readonly skipCommitHooks: boolean
-
-  /**
-   * Whether or not to add a `Signed-off-by` trailer to commit messages
-   * by means of passing the `--signoff` flag to git commit
-   */
-  readonly signOffCommits: boolean
-
-  /**
-   * Whether or not to allow creating a commit without any file changes
-   * by means of passing the `--allow-empty` flag to git commit.
-   * This option resets to false after each commit.
-   */
-  readonly allowEmptyCommit: boolean
-
-  /** Callback to set commit options for the given repository */
-  readonly onUpdateCommitOptions: (
-    repository: Repository,
-    options: Partial<CommitOptions>
-  ) => void
 }
 
 interface IFilterChangesListState {
@@ -524,7 +495,7 @@ export class FilterChangesList extends React.Component<
       files.length === 1
         ? __DARWIN__
           ? `Discard Changes`
-          : `Discard changes`
+          : "放弃更改"
         : __DARWIN__
         ? `Discard ${files.length} Selected Changes`
         : `Discard ${files.length} selected changes`
@@ -548,14 +519,14 @@ export class FilterChangesList extends React.Component<
 
     const stashAllChangesLabel = __DARWIN__
       ? 'Stash All Changes'
-      : 'Stash all changes'
+      : "暂存所有更改"
     const confirmStashAllChangesLabel = __DARWIN__
       ? 'Stash All Changes…'
-      : 'Stash all changes…'
+      : "暂存所有更改..."
 
     const items: IMenuItem[] = [
       {
-        label: __DARWIN__ ? 'Discard All Changes…' : 'Discard all changes…',
+        label: __DARWIN__ ? "放弃所有更改…" : "放弃所有更改…",
         action: this.onDiscardAllChanges,
         enabled: hasLocalChanges,
       },
@@ -585,7 +556,7 @@ export class FilterChangesList extends React.Component<
       label: CopyFilePathLabel,
       action: () => {
         const fullPath = Path.join(this.props.repository.path, file.path)
-        writeClipboardText(fullPath)
+        clipboard.writeText(fullPath)
       },
     }
   }
@@ -595,7 +566,7 @@ export class FilterChangesList extends React.Component<
   ): IMenuItem => {
     return {
       label: CopyRelativeFilePathLabel,
-      action: () => writeClipboardText(Path.normalize(file.path)),
+      action: () => clipboard.writeText(Path.normalize(file.path)),
     }
   }
 
@@ -608,7 +579,7 @@ export class FilterChangesList extends React.Component<
         const fullPaths = files.map(file =>
           Path.join(this.props.repository.path, file.path)
         )
-        writeClipboardText(fullPaths.join(EOL))
+        clipboard.writeText(fullPaths.join(EOL))
       },
     }
   }
@@ -620,7 +591,7 @@ export class FilterChangesList extends React.Component<
       label: CopySelectedRelativePathsLabel,
       action: () => {
         const paths = files.map(file => Path.normalize(file.path))
-        writeClipboardText(paths.join(EOL))
+        clipboard.writeText(paths.join(EOL))
       },
     }
   }
@@ -699,8 +670,8 @@ export class FilterChangesList extends React.Component<
       const enabled = Path.basename(path) !== GitIgnoreFileName
       items.push({
         label: __DARWIN__
-          ? 'Ignore File (Add to .gitignore)'
-          : 'Ignore file (add to .gitignore)',
+          ? "忽略文件(添加到 .gitignore)"
+          : "忽略文件(添加到 .gitignore)",
         action: () => this.props.onIgnoreFile(path),
         enabled,
       })
@@ -721,8 +692,8 @@ export class FilterChangesList extends React.Component<
 
         items.push({
           label: __DARWIN__
-            ? 'Ignore Folder (Add to .gitignore)'
-            : 'Ignore folder (add to .gitignore)',
+            ? "忽略文件夹(添加到 .gitignore)"
+            : "忽略文件夹(添加到 .gitignore)",
           submenu,
           enabled,
         })
@@ -761,16 +732,16 @@ export class FilterChangesList extends React.Component<
         { type: 'separator' },
         {
           label: __DARWIN__
-            ? 'Include Selected Files'
-            : 'Include selected files',
+            ? "包含选中文件"
+            : "包含选中文件",
           action: () => {
             selectedFiles.map(file => this.props.onIncludeChanged(file, true))
           },
         },
         {
           label: __DARWIN__
-            ? 'Exclude Selected Files'
-            : 'Exclude selected files',
+            ? "排除选中文件"
+            : "排除选中文件",
           action: () => {
             selectedFiles.map(file => this.props.onIncludeChanged(file, false))
           },
@@ -861,7 +832,7 @@ export class FilterChangesList extends React.Component<
     prepopulateCommitSummary: boolean
   ) {
     if (!prepopulateCommitSummary) {
-      return 'Summary (required)'
+      return "摘要(必填)"
     }
 
     const firstFile = files[0]
@@ -894,7 +865,6 @@ export class FilterChangesList extends React.Component<
       repositoryAccount,
       dispatcher,
       isCommitting,
-      hookProgress,
       isGeneratingCommitMessage,
       commitToAmend,
       currentBranchProtected,
@@ -971,8 +941,6 @@ export class FilterChangesList extends React.Component<
         focusCommitMessage={this.props.focusCommitMessage}
         autocompletionProviders={this.props.autocompletionProviders}
         isCommitting={isCommitting}
-        hookProgress={hookProgress}
-        onShowCommitProgress={this.props.onShowCommitProgress}
         isGeneratingCommitMessage={isGeneratingCommitMessage}
         shouldShowGenerateCommitMessageCallOut={
           shouldShowGenerateCommitMessageCallOut
@@ -1000,7 +968,6 @@ export class FilterChangesList extends React.Component<
         }
         onPersistCommitMessage={this.onPersistCommitMessage}
         onGenerateCommitMessage={this.onGenerateCommitMessage}
-        onCancelGenerateCommitMessage={this.onCancelGenerateCommitMessage}
         onCommitMessageFocusSet={this.onCommitMessageFocusSet}
         onRefreshAuthor={this.onRefreshAuthor}
         onShowPopup={this.onShowPopup}
@@ -1012,11 +979,6 @@ export class FilterChangesList extends React.Component<
         accounts={this.props.accounts}
         onSuccessfulCommitCreated={this.onSuccessfulCommitCreated}
         submitButtonAriaDescribedBy={'hidden-changes-warning'}
-        skipCommitHooks={this.props.skipCommitHooks}
-        signOffCommits={this.props.signOffCommits}
-        allowEmptyCommit={this.props.allowEmptyCommit}
-        showAllowEmptyCommitOption={true}
-        onUpdateCommitOptions={this.props.onUpdateCommitOptions}
       />
     )
   }
@@ -1069,10 +1031,6 @@ export class FilterChangesList extends React.Component<
         )
   }
 
-  private onCancelGenerateCommitMessage = () => {
-    this.props.dispatcher.cancelGenerateCommitMessage(this.props.repository)
-  }
-
   private onShowPopup = (p: Popup) => this.props.dispatcher.showPopup(p)
   private onShowFoldout = (f: Foldout) => this.props.dispatcher.showFoldout(f)
 
@@ -1123,7 +1081,7 @@ export class FilterChangesList extends React.Component<
         }
       >
         <Octicon className="stack-icon" symbol={StashIcon} />
-        <div className="text">Stashed Changes</div>
+        <div className="text">贮藏的更改</div>
         <Octicon symbol={octicons.chevronRight} />
       </button>
     )
@@ -1261,9 +1219,9 @@ export class FilterChangesList extends React.Component<
       files.length === 0 || isCommitting || rebaseConflictState !== null
 
     const checkAllLabel = `${
-      visibleFiles !== files.length ? `${formatNumber(visibleFiles)} of ` : ''
+      visibleFiles !== files.length ? `${visibleFiles} of ` : ''
     }
-    ${formatNumber(files.length)} changed file${plural(files.length)}`
+    ${files.length} changed file${plural(files.length)}`
 
     return (
       <div className="checkbox-container">
@@ -1303,7 +1261,7 @@ export class FilterChangesList extends React.Component<
         <TextBox
           ref={this.onTextBoxRef}
           displayClearButton={true}
-          placeholder={'Filter'}
+          placeholder={"筛选"}
           className="filter-list-filter-field"
           onValueChanged={this.onFilterTextChanged}
           onKeyDown={this.onFilterKeyDown}
@@ -1323,7 +1281,7 @@ export class FilterChangesList extends React.Component<
 
   private getListAriaLabel = () => {
     const { files } = this.props.workingDirectory
-    return `${formatNumber(files.length)} changed file${plural(files.length)}`
+    return `${files.length} changed file${plural(files.length)}`
   }
 
   public render() {
@@ -1411,11 +1369,10 @@ export class FilterChangesList extends React.Component<
     return (
       <div className="hidden-changes-warning" id="hidden-changes-warning">
         <Octicon symbol={octicons.alert} />
-        <span className="sr-only">Warning:</span>
-        <span>Hidden changes will be committed. </span>
+        <span className="sr-only">警告:</span>
+        <span>隐藏的更改将被提交。 </span>
         <LinkButton onClick={this.showFilesToBeCommitted}>
-          Adjust the filters to see all {formatNumber(filesSelected.length)}{' '}
-          changes
+          调整筛选条件以查看所有 {filesSelected.length} 更改
         </LinkButton>
       </div>
     )
@@ -1438,7 +1395,7 @@ export class FilterChangesList extends React.Component<
       <div className="no-changes-filtered">
         <img src={BlankSlateImage} className="blankslate-image" alt="" />
 
-        <div className="title">No files match your current filters</div>
+        <div className="title">没有文件符合当前筛选条件</div>
 
         <div className="subtitle">
           {getNoResultsMessage(this.props.fileListFilter)}
@@ -1449,7 +1406,7 @@ export class FilterChangesList extends React.Component<
             className="clear-filters-button"
             onClick={this.onClearAllFilters}
           >
-            Clear filters
+            清除筛选
           </Button>
         )}
       </div>

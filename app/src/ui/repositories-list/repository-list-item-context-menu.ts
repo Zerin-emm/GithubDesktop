@@ -1,7 +1,7 @@
 import { Repository } from '../../models/repository'
 import { IMenuItem } from '../../lib/menu-item'
 import { Repositoryish } from './group-repositories'
-import { writeClipboardText } from '../main-process-proxy'
+import { clipboard } from 'electron'
 import {
   RevealInFileManagerLabel,
   DefaultEditorLabel,
@@ -20,8 +20,6 @@ interface IRepositoryListItemContextMenuConfig {
   onRemoveRepository: (repository: Repositoryish) => void
   onChangeRepositoryAlias: (repository: Repository) => void
   onRemoveRepositoryAlias: (repository: Repository) => void
-  onCreateWorktree?: (repository: Repository) => void
-  onShowWorktrees?: (repository: Repository) => void
 }
 
 export const generateRepositoryListContextMenu = (
@@ -40,18 +38,17 @@ export const generateRepositoryListContextMenu = (
 
   const items: ReadonlyArray<IMenuItem> = [
     ...buildAliasMenuItems(config),
-    ...buildWorktreeMenuItems(config),
     {
-      label: __DARWIN__ ? 'Copy Repo Name' : 'Copy repo name',
-      action: () => writeClipboardText(repository.name),
+      label: __DARWIN__ ? "复制仓库名" : "复制仓库名",
+      action: () => clipboard.writeText(repository.name),
     },
     {
-      label: __DARWIN__ ? 'Copy Repo Path' : 'Copy repo path',
-      action: () => writeClipboardText(repository.path),
+      label: __DARWIN__ ? "复制仓库路径" : "复制仓库路径",
+      action: () => clipboard.writeText(repository.path),
     },
     { type: 'separator' },
     {
-      label: 'View on GitHub',
+      label: "在 GitHub 上查看",
       action: () => config.onViewOnGitHub(repository),
       enabled: github,
     },
@@ -72,7 +69,7 @@ export const generateRepositoryListContextMenu = (
     },
     { type: 'separator' },
     {
-      label: config.askForConfirmationOnRemoveRepository ? 'Remove…' : 'Remove',
+      label: config.askForConfirmationOnRemoveRepository ? "移除…" : "移除",
       action: () => config.onRemoveRepository(repository),
     },
   ]
@@ -92,47 +89,15 @@ const buildAliasMenuItems = (
   const verb = repository.alias == null ? 'Create' : 'Change'
   const items: Array<IMenuItem> = [
     {
-      label: __DARWIN__ ? `${verb} Alias` : `${verb} alias`,
+      label: __DARWIN__ ? `${verb} Alias` : `${verb} 别名`,
       action: () => config.onChangeRepositoryAlias(repository),
     },
   ]
 
   if (repository.alias !== null) {
     items.push({
-      label: __DARWIN__ ? 'Remove Alias' : 'Remove alias',
+      label: __DARWIN__ ? "移除别名" : "移除别名",
       action: () => config.onRemoveRepositoryAlias(repository),
-    })
-  }
-
-  return items
-}
-
-const buildWorktreeMenuItems = (
-  config: IRepositoryListItemContextMenuConfig
-): ReadonlyArray<IMenuItem> => {
-  const { repository, onCreateWorktree, onShowWorktrees } = config
-
-  if (!(repository instanceof Repository)) {
-    return []
-  }
-
-  if (onCreateWorktree === undefined && onShowWorktrees === undefined) {
-    return []
-  }
-
-  const items: Array<IMenuItem> = []
-
-  if (onShowWorktrees !== undefined) {
-    items.push({
-      label: __DARWIN__ ? 'Show Worktrees' : 'Show worktrees',
-      action: () => onShowWorktrees(repository),
-    })
-  }
-
-  if (onCreateWorktree !== undefined) {
-    items.push({
-      label: __DARWIN__ ? 'New Worktree…' : 'New worktree…',
-      action: () => onCreateWorktree(repository),
     })
   }
 

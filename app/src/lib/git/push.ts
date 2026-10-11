@@ -1,4 +1,4 @@
-import { git, HookCallbackOptions, IGitStringExecutionOptions } from './core'
+import { git, IGitStringExecutionOptions } from './core'
 import { Repository } from '../../models/repository'
 import { IPushProgress } from '../../models/progress'
 import { PushProgressParser, executionOptionsWithProgress } from '../progress'
@@ -13,13 +13,11 @@ export type PushOptions = {
    *
    * See https://git-scm.com/docs/git-push#Documentation/git-push.txt---no-force-with-lease
    */
-  readonly forceWithLease?: boolean
+  readonly forceWithLease: boolean
 
   /** A branch to push instead of the current branch */
   readonly branch?: Branch
-
-  readonly noVerify?: boolean
-} & HookCallbackOptions
+}
 
 /**
  * Push from the remote to the branch, optionally setting the upstream.
@@ -51,32 +49,33 @@ export async function push(
   localBranch: string,
   remoteBranch: string | null,
   tagsToPush: ReadonlyArray<string> | null,
-  options?: PushOptions,
+  options: PushOptions = {
+    forceWithLease: false,
+  },
   progressCallback?: (progress: IPushProgress) => void
 ): Promise<void> {
-  const args = ['push']
+  const args = [
+    'push',
+    remote.name,
+    remoteBranch ? `${localBranch}:${remoteBranch}` : localBranch,
+  ]
 
+  if (tagsToPush !== null) {
+    args.push(...tagsToPush)
+  }
   if (!remoteBranch) {
     args.push('--set-upstream')
-  } else if (options?.forceWithLease) {
+  } else if (options.forceWithLease === true) {
     args.push('--force-with-lease')
-  }
-
-  if (options?.noVerify) {
-    args.push('--no-verify')
   }
 
   let opts: IGitStringExecutionOptions = {
     env: await envForRemoteOperation(remote.url),
-    interceptHooks: ['pre-push'],
-    onHookProgress: options?.onHookProgress,
-    onHookFailure: options?.onHookFailure,
-    onTerminalOutputAvailable: options?.onTerminalOutputAvailable,
   }
 
   if (progressCallback) {
     args.push('--progress')
-    const title = `Pushing to ${remote.name}`
+    const title = `推送到 ${remote.name}`
     const kind = 'push'
 
     opts = await executionOptionsWithProgress(
@@ -106,16 +105,6 @@ export async function push(
       remote: remote.name,
       branch: localBranch,
     })
-  }
-
-  args.push(
-    '--',
-    remote.name,
-    remoteBranch ? `${localBranch}:${remoteBranch}` : localBranch
-  )
-
-  if (tagsToPush !== null) {
-    args.push(...tagsToPush)
   }
 
   await git(args, repository.path, 'push', opts)

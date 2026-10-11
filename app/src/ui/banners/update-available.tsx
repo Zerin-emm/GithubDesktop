@@ -77,7 +77,7 @@ export class UpdateAvailable extends React.Component<IUpdateAvailableProps> {
           {__DARWIN__ ? 'Apple silicon' : 'Arm64'} machine and will be installed
           at the next launch or{' '}
           <LinkButton onClick={this.updateNow}>
-            restart GitHub Desktop
+            重启 GitHub Desktop
           </LinkButton>{' '}
           now.
         </span>
@@ -100,7 +100,7 @@ export class UpdateAvailable extends React.Component<IUpdateAvailableProps> {
             />
           </span>
           Exciting new features have been added{version}. See{' '}
-          <LinkButton onClick={this.showReleaseNotes}>what's new</LinkButton> or{' '}
+          <LinkButton onClick={this.showReleaseNotes}>更新内容</LinkButton> or{' '}
           <LinkButton onClick={this.dismissUpdateShowCaseVisibility}>
             dismiss
           </LinkButton>
@@ -122,7 +122,7 @@ export class UpdateAvailable extends React.Component<IUpdateAvailableProps> {
           )}
           . Please{' '}
           <LinkButton onClick={this.updateNow}>
-            restart GitHub Desktop
+            重启 GitHub Desktop
           </LinkButton>{' '}
           now to install pending updates.
         </span>
@@ -131,10 +131,9 @@ export class UpdateAvailable extends React.Component<IUpdateAvailableProps> {
 
     return (
       <span onSubmit={this.updateNow}>
-        An updated version of GitHub Desktop is available and will be installed
-        at the next launch. See{' '}
-        <LinkButton onClick={this.showReleaseNotes}>what's new</LinkButton> or{' '}
-        <LinkButton onClick={this.updateNow}>restart GitHub Desktop</LinkButton>
+         GitHub Desktop 有新版本可用，将在下次启动时安装。查看{' '}
+        <LinkButton onClick={this.showReleaseNotes}>更新内容</LinkButton> or{' '}
+        <LinkButton onClick={this.updateNow}>重启 GitHub Desktop</LinkButton>
         .
       </span>
     )

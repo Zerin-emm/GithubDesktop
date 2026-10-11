@@ -9,8 +9,12 @@ import { DragData, DragType } from '../../models/drag-drop'
 import classNames from 'classnames'
 import memoizeOne from 'memoize-one'
 import { IMenuItem, showContextualMenu } from '../../lib/menu-item'
+import {
+  enableCheckoutCommit,
+  enableResetToCommit,
+} from '../../lib/feature-flag'
 import { getDotComAPIEndpoint } from '../../lib/api'
-import { writeClipboardText } from '../main-process-proxy'
+import { clipboard } from 'electron'
 import { RowIndexPath } from '../lib/list/list-row-index-path'
 import { assertNever } from '../../lib/fatal-error'
 import { CommitDragElement } from '../drag-elements/commit-drag-element'
@@ -180,8 +184,6 @@ interface ICommitListProps {
 
   readonly accounts: ReadonlyArray<Account>
 
-  readonly preferAbsoluteDates: boolean
-
   /** This will make the list semantics friendly to screen reader users in browse mode. */
   readonly isInformationalView?: boolean
 }
@@ -310,7 +312,6 @@ export class CommitList extends React.Component<
         onRemoveDragElement={this.props.onRemoveCommitDragElement}
         disableSquashing={this.props.disableSquashing}
         accounts={this.props.accounts}
-        preferAbsoluteDates={this.props.preferAbsoluteDates}
       />
     )
   }
@@ -617,7 +618,6 @@ export class CommitList extends React.Component<
             commitLookupHash: this.commitsHash(this.getVisibleCommits()),
             tagsToPush: this.props.tagsToPush,
             shasToHighlight: this.props.shasToHighlight,
-            preferAbsoluteDates: this.props.preferAbsoluteDates,
           }}
           setScrollTop={this.props.compareListScrollTop}
           rowCustomClassNameMap={this.getRowCustomClassMap()}
@@ -636,7 +636,7 @@ export class CommitList extends React.Component<
     const containerWidth = this.containerRef.current?.clientWidth ?? 0
     const reorderCommitsHintTitle = __DARWIN__
       ? 'Reorder Commits'
-      : 'Reorder commits'
+      : "重新排序提交"
 
     return (
       <Popover
@@ -652,7 +652,7 @@ export class CommitList extends React.Component<
       >
         <h4>{reorderCommitsHintTitle}</h4>
         <p>
-          Use <KeyboardShortcut darwinKeys={['↑']} keys={['↑']} />
+          使用 <KeyboardShortcut darwinKeys={['↑']} keys={['↑']} />
           <KeyboardShortcut darwinKeys={['↓']} keys={['↓']} /> to choose a new
           location.
         </p>
@@ -739,28 +739,28 @@ export class CommitList extends React.Component<
       this.props.canResetToCommits === true && isResettableCommit
     const canBeCheckedOut = row > 0 //Cannot checkout the current commit
 
-    let viewOnGitHubLabel = 'View on GitHub'
+    let viewOnGitHubLabel = "在 GitHub 上查看"
     const gitHubRepository = this.props.gitHubRepository
 
     if (
       gitHubRepository &&
       gitHubRepository.endpoint !== getDotComAPIEndpoint()
     ) {
-      viewOnGitHubLabel = 'View on GitHub Enterprise'
+      viewOnGitHubLabel = "在Github上查看 Enterprise"
     }
 
     const items: IMenuItem[] = []
 
     if (canBeAmended) {
       items.push({
-        label: __DARWIN__ ? 'Amend Commit…' : 'Amend commit…',
+        label: __DARWIN__ ? 'Amend Commit…' : "修改提交",
         action: () => this.props.onAmendCommit?.(commit, isLocal),
       })
     }
 
     if (canBeUndone) {
       items.push({
-        label: __DARWIN__ ? 'Undo Commit…' : 'Undo commit…',
+        label: __DARWIN__ ? 'Undo Commit…' : "撤销提交",
         action: () => {
           if (this.props.onUndoCommit) {
             this.props.onUndoCommit(commit)
@@ -770,26 +770,30 @@ export class CommitList extends React.Component<
       })
     }
 
-    items.push({
-      label: __DARWIN__ ? 'Reset to Commit…' : 'Reset to commit…',
-      action: () => {
-        if (this.props.onResetToCommit) {
-          this.props.onResetToCommit(commit)
-        }
-      },
-      enabled: canBeResetTo && this.props.onResetToCommit !== undefined,
-    })
+    if (enableResetToCommit()) {
+      items.push({
+        label: __DARWIN__ ? 'Reset to Commit…' : "重置提交",
+        action: () => {
+          if (this.props.onResetToCommit) {
+            this.props.onResetToCommit(commit)
+          }
+        },
+        enabled: canBeResetTo && this.props.onResetToCommit !== undefined,
+      })
+    }
+
+    if (enableCheckoutCommit()) {
+      items.push({
+        label: __DARWIN__ ? 'Checkout Commit' : "检出提交",
+        action: () => {
+          this.props.onCheckoutCommit?.(commit)
+        },
+        enabled: canBeCheckedOut && this.props.onCheckoutCommit !== undefined,
+      })
+    }
 
     items.push({
-      label: __DARWIN__ ? 'Checkout Commit' : 'Checkout commit',
-      action: () => {
-        this.props.onCheckoutCommit?.(commit)
-      },
-      enabled: canBeCheckedOut && this.props.onCheckoutCommit !== undefined,
-    })
-
-    items.push({
-      label: __DARWIN__ ? 'Reorder Commit' : 'Reorder commit',
+      label: __DARWIN__ ? 'Reorder Commit' : "重新排序提交",
       action: () => {
         this.props.onKeyboardReorder?.([commit])
       },
@@ -800,7 +804,7 @@ export class CommitList extends React.Component<
       {
         label: __DARWIN__
           ? 'Revert Changes in Commit'
-          : 'Revert changes in commit',
+          : "在提交中还原更改",
         action: () => {
           if (this.props.onRevertCommit) {
             this.props.onRevertCommit(commit)
@@ -812,7 +816,7 @@ export class CommitList extends React.Component<
       {
         label: __DARWIN__
           ? 'Create Branch from Commit'
-          : 'Create branch from commit',
+          : "根据提交创建分支",
         action: () => {
           if (this.props.onCreateBranch) {
             this.props.onCreateBranch(commit)
@@ -820,7 +824,7 @@ export class CommitList extends React.Component<
         },
       },
       {
-        label: 'Create Tag…',
+        label: "创建标签",
         action: () => this.props.onCreateTag?.(commit.sha),
         enabled: this.props.onCreateTag !== undefined,
       }
@@ -837,21 +841,21 @@ export class CommitList extends React.Component<
       )
     }
     const darwinTagsLabel = commit.tags.length > 1 ? 'Copy Tags' : 'Copy Tag'
-    const windowTagsLabel = commit.tags.length > 1 ? 'Copy tags' : 'Copy tag'
+    const windowTagsLabel = commit.tags.length > 1 ? 'Copy tags' : "复制标签"
     items.push(
       {
-        label: __DARWIN__ ? 'Cherry-pick Commit…' : 'Cherry-pick commit…',
+        label: __DARWIN__ ? 'Cherry-pick Commit…' : "筛选提交",
         action: () => this.props.onCherryPick?.(this.selectedCommits),
         enabled: this.canCherryPick(),
       },
       { type: 'separator' },
       {
-        label: 'Copy SHA',
-        action: () => writeClipboardText(commit.sha),
+        label: "复制SHA",
+        action: () => clipboard.writeText(commit.sha),
       },
       {
         label: __DARWIN__ ? darwinTagsLabel : windowTagsLabel,
-        action: () => writeClipboardText(commit.tags.join(' ')),
+        action: () => clipboard.writeText(commit.tags.join(' ')),
         enabled: commit.tags.length > 0,
       },
       {
@@ -912,7 +916,7 @@ export class CommitList extends React.Component<
     const unpushedTagsSet = new Set(unpushedTags)
 
     return {
-      label: 'Delete tag…',
+      label: "删除标签…",
       submenu: commit.tags.map(tagName => {
         return {
           label: tagName,

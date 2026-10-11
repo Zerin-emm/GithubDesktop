@@ -1,3 +1,5 @@
+import { uuid } from '../../lib/uuid'
+
 const activeIds = new Set<string>()
 const poolPrefix = '__'
 
@@ -64,7 +66,7 @@ export function createUniqueId(prefix: string): string {
     )
   }
 
-  return crypto.randomUUID()
+  return uuid()
 }
 
 /**

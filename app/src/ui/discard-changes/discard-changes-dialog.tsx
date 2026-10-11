@@ -57,18 +57,18 @@ export class DiscardChanges extends React.Component<
 
   private getOkButtonLabel() {
     if (this.props.discardingAllChanges) {
-      return __DARWIN__ ? 'Discard All Changes' : 'Discard all changes'
+      return __DARWIN__ ? 'Discard All Changes' : "放弃所有更改"
     }
-    return __DARWIN__ ? 'Discard Changes' : 'Discard changes'
+    return __DARWIN__ ? 'Discard Changes' : "放弃更改"
   }
 
   private getDialogTitle() {
     if (this.props.discardingAllChanges) {
       return __DARWIN__
         ? 'Confirm Discard All Changes'
-        : 'Confirm discard all changes'
+        : "确认放弃所有更改"
     }
-    return __DARWIN__ ? 'Confirm Discard Changes' : 'Confirm discard changes'
+    return __DARWIN__ ? 'Confirm Discard Changes' : "确认放弃更改"
   }
 
   public render() {
@@ -112,7 +112,7 @@ export class DiscardChanges extends React.Component<
     if (this.props.showDiscardChangesSetting) {
       return (
         <Checkbox
-          label="Do not show this message again"
+          label="不再显示此消息"
           value={
             this.state.confirmDiscardChanges
               ? CheckboxValue.Off
@@ -140,7 +140,7 @@ export class DiscardChanges extends React.Component<
     } else {
       return (
         <div id="discard-changes-confirmation-file-list">
-          <p>Are you sure you want to discard all changes to:</p>
+          <p>确定要放弃所有更改吗？</p>
           <div className="file-list">
             <ul>
               {this.props.files.map(p => (

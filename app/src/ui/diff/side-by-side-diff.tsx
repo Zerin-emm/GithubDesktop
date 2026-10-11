@@ -1419,13 +1419,13 @@ export class SideBySideDiff extends React.Component<
 
     const items: IMenuItem[] = [
       {
-        label: 'Copy',
+        label: "复制",
         // When using role="copy", the enabled attribute is not taken into account.
         role: selectionLength > 0 ? 'copy' : undefined,
         enabled: selectionLength > 0,
       },
       {
-        label: __DARWIN__ ? 'Select All' : 'Select all',
+        label: __DARWIN__ ? "全选" : "全选",
         action: () => this.onSelectAll(),
       },
     ]
@@ -1480,7 +1480,7 @@ export class SideBySideDiff extends React.Component<
 
     return this.diffToRestore === null
       ? {
-          label: __DARWIN__ ? 'Expand Whole File' : 'Expand whole file',
+          label: __DARWIN__ ? 'Expand Whole File' : "展开整个文件",
           action: this.onExpandWholeFile,
           // If there is only one hunk that can't be expanded, disable this item
           enabled:
@@ -1490,7 +1490,7 @@ export class SideBySideDiff extends React.Component<
       : {
           label: __DARWIN__
             ? 'Collapse Expanded Lines'
-            : 'Collapse expanded lines',
+            : "折叠扩展的行",
           action: this.onCollapseExpandedLines,
         }
   }
@@ -2092,7 +2092,8 @@ function* enumerateColumnContents(
   if (row.type === DiffRowType.Hunk) {
     yield { type: DiffColumn.Before, content: row.content }
   } else if (row.type === DiffRowType.Added) {
-    yield { type: DiffColumn.After, content: row.data.content }
+    const type = showSideBySideDiffs ? DiffColumn.After : DiffColumn.Before
+    yield { type, content: row.data.content }
   } else if (row.type === DiffRowType.Deleted) {
     yield { type: DiffColumn.Before, content: row.data.content }
   } else if (row.type === DiffRowType.Context) {

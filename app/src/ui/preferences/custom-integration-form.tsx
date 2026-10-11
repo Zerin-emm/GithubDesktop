@@ -8,7 +8,6 @@ import {
   validateCustomIntegrationPath,
   parseCustomIntegrationArguments,
   TargetPathArgument,
-  WindowsExecutableExtensions,
 } from '../../lib/custom-integration'
 
 interface ICustomIntegrationFormProps {
@@ -69,21 +68,21 @@ export class CustomIntegrationForm extends React.Component<
       <div className="custom-integration-form-container">
         <div className="custom-integration-form-path-container">
           <TextBox
-            label="Path"
+            label="路径"
             value={this.state.path}
             ref={this.pathInputRef}
             onValueChanged={this.onPathChanged}
-            placeholder="Path to executable"
+            placeholder="可执行文件路径"
             ariaDescribedBy={`${this.props.id}-custom-integration-path-error`}
           />
-          <Button onClick={this.onChoosePath}>Choose…</Button>
+          <Button onClick={this.onChoosePath}>选择…</Button>
         </div>
         {this.renderPathErrors()}
         <TextBox
-          label="Arguments"
+          label="参数"
           value={this.state.arguments}
           onValueChanged={this.onParamsChanged}
-          placeholder="Command line arguments"
+          placeholder="命令行参数"
           ariaDescribedBy={`${this.props.id}-custom-integration-args-error`}
         />
         {this.renderArgsErrors()}
@@ -140,19 +139,8 @@ export class CustomIntegrationForm extends React.Component<
   private onChoosePath = async () => {
     // On macOS we also want to allow selecting directories, since apps on macOS
     // are usually directories (e.g. apps on /Applications).
-    // On Windows we restrict the picker to extensions that `spawn` can launch
-    // directly so users don't pick a `.bat`/`.cmd` wrapper that would fail at
-    // launch time.
     const path = await showOpenDialog({
       properties: __DARWIN__ ? ['openFile', 'openDirectory'] : ['openFile'],
-      filters: __WIN32__
-        ? [
-            {
-              name: 'Executables',
-              extensions: [...WindowsExecutableExtensions],
-            },
-          ]
-        : undefined,
     })
 
     if (path === null) {

@@ -107,7 +107,7 @@ export class About extends React.Component<IAboutProps> {
         return (
           <Row>
             <Button onClick={this.props.onQuitAndInstall}>
-              Quit and Install Update
+              退出并安装更新
             </Button>
           </Row>
         )
@@ -121,7 +121,7 @@ export class About extends React.Component<IAboutProps> {
             UpdateStatus.UpdateNotAvailable,
           ].includes(updateStatus) || isOSNoLongerSupportedByElectron()
 
-        const buttonTitle = 'Check for Updates'
+        const buttonTitle = "检查更新"
 
         return (
           <Row>
@@ -159,9 +159,9 @@ export class About extends React.Component<IAboutProps> {
 
     switch (status) {
       case UpdateStatus.CheckingForUpdates:
-        return <UpdateInfo message="Checking for updates…" loading={true} />
+        return <UpdateInfo message="正在检查更新..." loading={true} />
       case UpdateStatus.UpdateAvailable:
-        return <UpdateInfo message="Downloading update…" loading={true} />
+        return <UpdateInfo message="正在下载…" loading={true} />
       case UpdateStatus.UpdateNotAvailable:
         if (!lastSuccessfulCheck) {
           return null
@@ -169,7 +169,7 @@ export class About extends React.Component<IAboutProps> {
 
         const richMessage = (
           <p>
-            You have the latest version (last checked{' '}
+            当前已是最新版本 (最后检查时间:{' '}
             <RelativeTime date={lastSuccessfulCheck} />)
           </p>
         )
@@ -187,7 +187,7 @@ export class About extends React.Component<IAboutProps> {
         )
       case UpdateStatus.UpdateReady:
         return (
-          <UpdateInfo message="An update has been downloaded and is ready to be installed." />
+          <UpdateInfo message="已下载更新并准备安装。" />
         )
       case UpdateStatus.UpdateNotChecked:
         return null
@@ -220,9 +220,7 @@ export class About extends React.Component<IAboutProps> {
     if (!this.props.updateState.lastSuccessfulCheck) {
       return (
         <DialogError>
-          Couldn't determine the last time an update check was performed. You
-          may be running an old version. Please try manually checking for
-          updates and contact GitHub Support if the problem persists
+          无法确定上次执行更新检查的时间，您可能正在运行旧版本，请尝试手动检查更新，如果问题仍然存在，请联系GitHub支持
         </DialogError>
       )
     }
@@ -230,29 +228,11 @@ export class About extends React.Component<IAboutProps> {
     return null
   }
 
-  private renderBetaLink() {
-    if (__RELEASE_CHANNEL__ === 'beta') {
-      return
-    }
-
-    return (
-      <div>
-        <p className="no-padding">Looking for the latest features?</p>
-        <p className="no-padding">
-          Check out the{' '}
-          <LinkButton uri="https://desktop.github.com/beta">
-            Beta Channel
-          </LinkButton>
-        </p>
-      </div>
-    )
-  }
-
   public render() {
     const name = this.props.applicationName
     const version = this.props.applicationVersion
     const releaseNotesLink = (
-      <LinkButton uri={ReleaseNotesUri}>release notes</LinkButton>
+      <LinkButton uri={ReleaseNotesUri}>发布记录</LinkButton>
     )
 
     const versionText = __DEV__ ? `Build ${version}` : `Version ${version}`
@@ -284,21 +264,15 @@ export class About extends React.Component<IAboutProps> {
           </p>
           {this.renderUpdateDetails()}
           {this.renderUpdateButton()}
-          {this.renderBetaLink()}
           <div className="terms-and-license-container">
             <p className="no-padding terms-and-license">
               <LinkButton onClick={this.props.onShowTermsAndConditions}>
-                Terms and Conditions
+                服务条款
               </LinkButton>
             </p>
             <p className="no-padding terms-and-license">
               <LinkButton onClick={this.props.onShowAcknowledgements}>
-                License and Open Source Notices
-              </LinkButton>
-            </p>
-            <p className="terms-and-license">
-              <LinkButton uri="https://gh.io/copilot-for-desktop-transparency">
-                Responsible use of Copilot in GitHub Desktop
+                许可证和开源声明
               </LinkButton>
             </p>
           </div>

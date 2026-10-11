@@ -34,7 +34,7 @@ export class ConfirmCommitFilteredChanges extends React.Component<
         id="hidden-changes"
         type="warning"
         title={
-          __DARWIN__ ? 'Commit Filtered Changes?' : 'Commit filtered changes?'
+          __DARWIN__ ? "提交筛选后的更改?" : "提交筛选后的更改?"
         }
         onSubmit={this.onSubmit}
         onDismissed={this.props.onDismissed}
@@ -43,16 +43,15 @@ export class ConfirmCommitFilteredChanges extends React.Component<
       >
         <DialogContent>
           <p id="confirm-commit-filtered-changes-message">
-            You have a filter applied. There are{' '}
+            当前启用了筛选,有{' '}
             <LinkButton onClick={this.showFilesToBeCommitted}>
-              hidden changes
+              隐藏的更改
             </LinkButton>{' '}
-            that will be committed. Are you sure you want to commit these
-            changes?
+            将被提交。确定要提交这些更改吗?
           </p>
           <Row>
             <Checkbox
-              label="Do not show this message again"
+              label="不再显示此消息"
               value={
                 this.state.askForConfirmationOnCommitFilteredChanges
                   ? CheckboxValue.Off
@@ -65,8 +64,8 @@ export class ConfirmCommitFilteredChanges extends React.Component<
         <DialogFooter>
           <OkCancelButtonGroup
             destructive={true}
-            okButtonText={__DARWIN__ ? 'Commit Anyway' : 'Commit anyway'}
-            cancelButtonText={'Cancel'}
+            okButtonText={__DARWIN__ ? "仍然提交" : "仍然提交"}
+            cancelButtonText={"取消"}
             onCancelButtonClick={this.props.onDismissed}
           />
         </DialogFooter>
